@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Champions DB - Pokémon Competitive Database</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --card-bg: #141414;
+      --border: rgba(255,255,255,0.07);
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --accent: #a5b4fc;
+      --text: #f1f5f9;
+      --text-secondary: #94a3b8;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+    }
+    .type-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .type-normal { background: #A8A878; color: white; }
+    .type-fire { background: #F08030; color: white; }
+    .type-water { background: #6890F0; color: white; }
+    .type-grass { background: #78C850; color: white; }
+    .type-electric { background: #F8D030; color: #333; }
+    .type-ice { background: #98D8D8; color: #333; }
+    .type-fighting { background: #C03028; color: white; }
+    .type-poison { background: #A040A0; color: white; }
+    .type-ground { background: #E0C068; color: #333; }
+    .type-flying { background: #A890F0; color: white; }
+    .type-psychic { background: #F85888; color: white; }
+    .type-bug { background: #A8B820; color: white; }
+    .type-rock { background: #B8A038; color: white; }
+    .type-ghost { background: #705898; color: white; }
+    .type-dragon { background: #7038F8; color: white; }
+    .type-dark { background: #705848; color: white; }
+    .type-steel { background: #B8B8D0; color: #333; }
+    .type-fairy { background: #EE99AC; color: white; }
+    .stat-bar {
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .stat-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #a5b4fc);
+      border-radius: 2px;
+    }
+    .tooltip {
+      position: fixed;
+      background: rgba(12, 12, 20, 0.97);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      z-index: 9999;
+      pointer-events: none;
+      min-width: 200px;
+      max-width: 290px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.85);
+    }
+    .scroll-h { overflow-x: auto; }
+    .scroll-h::-webkit-scrollbar { height: 6px; }
+    .scroll-h::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 3px; }
+    .scroll-h::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 3px; }
+    .sprite-box {
+      width: 72px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .sprite-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+    }
+    .sprite-box-sm {
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sprite-box-sm img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .move-select {
+      width: 100%;
+      background: #1a1a2e;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #e2e8f0;
+      font-size: 0.65rem;
+      border-radius: 4px;
+      padding: 2px 4px;
+      appearance: none;
+    }
+    .move-select:focus { outline: 1px solid #6366f1; }
+    .poke-picker {
+      max-height: 110px;
+      overflow-y: auto;
+      background: #0f0f0f;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 4px;
+    }
+    .poke-picker::-webkit-scrollbar { width: 3px; }
+    .poke-picker::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.5); border-radius: 2px; }
+    .btn-primary {
+      background: #6366f1;
+      color: white;
+      font-size: 0.7rem;
+      border-radius: 4px;
+      padding: 3px 8px;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #4f46e5; }
+    .btn-danger {
+      background: rgba(220,38,38,0.7);
+      color: white;
+      font-size: 0.7rem;
+      border-radius: 4px;
+      padding: 3px 8px;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s;
+    }
+    .btn-danger:hover { background: rgba(220,38,38,0.9); }
+    .tab-active { background: #6366f1 !important; color: white !important; }
+    .filter-active { background: #6366f1 !important; color: white !important; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useMemo, useRef } = React;
+
+    const ROSTER = [
+      {name:"Abomasnow",slug:"abomasnow",id:460,types:["grass","ice"]},
+      {name:"Absol",slug:"absol",id:359,types:["dark"]},
+      {name:"Aegislash",slug:"aegislash-shield",id:681,types:["steel","ghost"],sdSlug:"aegislash"},
+      {name:"Aerodactyl",slug:"aerodactyl",id:142,types:["rock","flying"]},
+      {name:"Aggron",slug:"aggron",id:306,types:["steel","rock"]},
+      {name:"Alakazam",slug:"alakazam",id:65,types:["psychic"]},
+      {name:"Alcremie",slug:"alcremie",id:869,types:["fairy"]},
+      {name:"Altaria",slug:"altaria",id:334,types:["dragon","flying"]},
+      {name:"Ampharos",slug:"ampharos",id:181,types:["electric"]},
+      {name:"Appletun",slug:"appletun",id:842,types:["grass","dragon"]},
+      {name:"Araquanid",slug:"araquanid",id:752,types:["water","bug"]},
+      {name:"Arbok",slug:"arbok",id:24,types:["poison"]},
+      {name:"Arcanine",slug:"arcanine",id:59,types:["fire"]},
+      {name:"Arcanine (Hisuian)",slug:"arcanine-hisui",id:59,types:["fire","rock"],form:"Hisuian"},
+      {name:"Archaludon",slug:"archaludon",id:1018,types:["steel","dragon"]},
+      {name:"Ariados",slug:"ariados",id:168,types:["bug","poison"]},
+      {name:"Armarouge",slug:"armarouge",id:921,types:["fire","psychic"]},
+      {name:"Aromatisse",slug:"aromatisse",id:683,types:["fairy"]},
+      {name:"Audino",slug:"audino",id:531,types:["normal"]},
+      {name:"Aurorus",slug:"aurorus",id:699,types:["rock","ice"]},
+      {name:"Avalugg",slug:"avalugg",id:713,types:["ice"]},
+      {name:"Avalugg (Hisuian)",slug:"avalugg-hisui",id:713,types:["ice","rock"],form:"Hisuian"},
+      {name:"Azumarill",slug:"azumarill",id:184,types:["water","fairy"]},
+      {name:"Banette",slug:"banette",id:354,types:["ghost"]},
+      {name:"Basculegion",slug:"basculegion-male",id:902,types:["water","ghost"],sdSlug:"basculegion-m"},
+      {name:"Bastiodon",slug:"bastiodon",id:411,types:["rock","steel"]},
+      {name:"Beartic",slug:"beartic",id:614,types:["ice"]},
+      {name:"Beedrill",slug:"beedrill",id:15,types:["bug","poison"]},
+      {name:"Bellibolt",slug:"bellibolt",id:939,types:["electric"]},
+      {name:"Blastoise",slug:"blastoise",id:9,types:["water"]},
+      {name:"Camerupt",slug:"camerupt",id:323,types:["fire","ground"]},
+      {name:"Castform",slug:"castform",id:351,types:["normal"]},
+      {name:"Ceruledge",slug:"ceruledge",id:922,types:["fire","ghost"]},
+      {name:"Chandelure",slug:"chandelure",id:609,types:["ghost","fire"]},
+      {name:"Charizard",slug:"charizard",id:6,types:["fire","flying"]},
+      {name:"Chesnaught",slug:"chesnaught",id:652,types:["grass","fighting"]},
+      {name:"Chimecho",slug:"chimecho",id:358,types:["psychic"]},
+      {name:"Clawitzer",slug:"clawitzer",id:693,types:["water"]},
+      {name:"Clefable",slug:"clefable",id:36,types:["fairy"]},
+      {name:"Cofagrigus",slug:"cofagrigus",id:563,types:["ghost"]},
+      {name:"Conkeldurr",slug:"conkeldurr",id:534,types:["fighting"]},
+      {name:"Corviknight",slug:"corviknight",id:823,types:["flying","steel"]},
+      {name:"Crabominable",slug:"crabominable",id:740,types:["fighting","ice"]},
+      {name:"Decidueye",slug:"decidueye",id:724,types:["grass","ghost"]},
+      {name:"Decidueye (Hisuian)",slug:"decidueye-hisui",id:724,types:["grass","fighting"],form:"Hisuian"},
+      {name:"Dedenne",slug:"dedenne",id:702,types:["electric","fairy"]},
+      {name:"Delphox",slug:"delphox",id:655,types:["fire","psychic"]},
+      {name:"Diggersby",slug:"diggersby",id:660,types:["normal","ground"]},
+      {name:"Ditto",slug:"ditto",id:132,types:["normal"]},
+      {name:"Dragapult",slug:"dragapult",id:887,types:["dragon","ghost"]},
+      {name:"Dragonite",slug:"dragonite",id:149,types:["dragon","flying"]},
+      {name:"Drampa",slug:"drampa",id:780,types:["normal","dragon"]},
+      {name:"Emboar",slug:"emboar",id:500,types:["fire","fighting"]},
+      {name:"Emolga",slug:"emolga",id:587,types:["electric","flying"]},
+      {name:"Empoleon",slug:"empoleon",id:395,types:["water","steel"]},
+      {name:"Espathra",slug:"espathra",id:956,types:["psychic"]},
+      {name:"Espeon",slug:"espeon",id:196,types:["psychic"]},
+      {name:"Excadrill",slug:"excadrill",id:530,types:["ground","steel"]},
+      {name:"Farigiraf",slug:"farigiraf",id:981,types:["normal","psychic"]},
+      {name:"Feraligatr",slug:"feraligatr",id:160,types:["water"]},
+      {name:"Flapple",slug:"flapple",id:841,types:["grass","dragon"]},
+      {name:"Flareon",slug:"flareon",id:136,types:["fire"]},
+      {name:"Floette",slug:"floette",id:670,types:["fairy"]},
+      {name:"Florges",slug:"florges",id:671,types:["fairy"]},
+      {name:"Forretress",slug:"forretress",id:205,types:["bug","steel"]},
+      {name:"Froslass",slug:"froslass",id:478,types:["ice","ghost"]},
+      {name:"Furfrou",slug:"furfrou",id:676,types:["normal"]},
+      {name:"Gallade",slug:"gallade",id:475,types:["psychic","fighting"]},
+      {name:"Garbodor",slug:"garbodor",id:569,types:["poison"]},
+      {name:"Garchomp",slug:"garchomp",id:445,types:["dragon","ground"]},
+      {name:"Gardevoir",slug:"gardevoir",id:282,types:["psychic","fairy"]},
+      {name:"Garganacl",slug:"garganacl",id:937,types:["rock"]},
+      {name:"Gengar",slug:"gengar",id:94,types:["ghost","poison"]},
+      {name:"Glaceon",slug:"glaceon",id:471,types:["ice"]},
+      {name:"Glalie",slug:"glalie",id:362,types:["ice"]},
+      {name:"Glimmora",slug:"glimmora",id:970,types:["rock","poison"]},
+      {name:"Gliscor",slug:"gliscor",id:472,types:["ground","flying"]},
+      {name:"Golurk",slug:"golurk",id:623,types:["ground","ghost"]},
+      {name:"Goodra",slug:"goodra",id:706,types:["dragon"]},
+      {name:"Goodra (Hisuian)",slug:"goodra-hisui",id:706,types:["steel","dragon"],form:"Hisuian"},
+      {name:"Gourgeist",slug:"gourgeist-average",id:711,types:["ghost","grass"],sdSlug:"gourgeist"},
+      {name:"Greninja",slug:"greninja",id:658,types:["water","dark"]},
+      {name:"Gyarados",slug:"gyarados",id:130,types:["water","flying"]},
+      {name:"Hatterene",slug:"hatterene",id:858,types:["psychic","fairy"]},
+      {name:"Hawlucha",slug:"hawlucha",id:701,types:["fighting","flying"]},
+      {name:"Heliolisk",slug:"heliolisk",id:695,types:["electric","normal"]},
+      {name:"Heracross",slug:"heracross",id:214,types:["bug","fighting"]},
+      {name:"Hippowdon",slug:"hippowdon",id:450,types:["ground"]},
+      {name:"Houndoom",slug:"houndoom",id:229,types:["dark","fire"]},
+      {name:"Hydrapple",slug:"hydrapple",id:1019,types:["grass","dragon"]},
+      {name:"Hydreigon",slug:"hydreigon",id:635,types:["dark","dragon"]},
+      {name:"Incineroar",slug:"incineroar",id:727,types:["fire","dark"]},
+      {name:"Infernape",slug:"infernape",id:392,types:["fire","fighting"]},
+      {name:"Jolteon",slug:"jolteon",id:135,types:["electric"]},
+      {name:"Kangaskhan",slug:"kangaskhan",id:115,types:["normal"]},
+      {name:"Kingambit",slug:"kingambit",id:983,types:["dark","steel"]},
+      {name:"Kleavor",slug:"kleavor",id:900,types:["bug","rock"]},
+      {name:"Klefki",slug:"klefki",id:707,types:["steel","fairy"]},
+      {name:"Kommo-o",slug:"kommo-o",id:784,types:["dragon","fighting"]},
+      {name:"Krookodile",slug:"krookodile",id:553,types:["ground","dark"]},
+      {name:"Leafeon",slug:"leafeon",id:470,types:["grass"]},
+      {name:"Liepard",slug:"liepard",id:510,types:["dark"]},
+      {name:"Lopunny",slug:"lopunny",id:428,types:["normal"]},
+      {name:"Lucario",slug:"lucario",id:448,types:["fighting","steel"]},
+      {name:"Luxray",slug:"luxray",id:405,types:["electric"]},
+      {name:"Lycanroc",slug:"lycanroc-midday",id:745,types:["rock"],sdSlug:"lycanroc"},
+      {name:"Lycanroc (Midnight)",slug:"lycanroc-midnight",id:745,types:["rock"],form:"Midnight"},
+      {name:"Lycanroc (Dusk)",slug:"lycanroc-dusk",id:745,types:["rock"],form:"Dusk"},
+      {name:"Machamp",slug:"machamp",id:68,types:["fighting"]},
+      {name:"Mamoswine",slug:"mamoswine",id:473,types:["ice","ground"]},
+      {name:"Manectric",slug:"manectric",id:310,types:["electric"]},
+      {name:"Maushold",slug:"maushold",id:925,types:["normal"]},
+      {name:"Medicham",slug:"medicham",id:308,types:["fighting","psychic"]},
+      {name:"Meganium",slug:"meganium",id:154,types:["grass"]},
+      {name:"Meowscarada",slug:"meowscarada",id:908,types:["grass","dark"]},
+      {name:"Meowstic",slug:"meowstic-male",id:678,types:["psychic"],sdSlug:"meowstic-m"},
+      {name:"Meowstic (F)",slug:"meowstic-female",id:678,types:["psychic"],form:"Female",sdSlug:"meowstic-f"},
+      {name:"Milotic",slug:"milotic",id:350,types:["water"]},
+      {name:"Mimikyu",slug:"mimikyu-disguised",id:778,types:["ghost","fairy"],sdSlug:"mimikyu"},
+      {name:"Morpeko",slug:"morpeko",id:877,types:["electric","dark"]},
+      {name:"Mr. Rime",slug:"mr-rime",id:866,types:["ice","psychic"]},
+      {name:"Mudsdale",slug:"mudsdale",id:750,types:["ground"]},
+      {name:"Ninetales",slug:"ninetales",id:38,types:["fire"]},
+      {name:"Ninetales (Alolan)",slug:"ninetales-alola",id:38,types:["ice","fairy"],form:"Alolan"},
+      {name:"Noivern",slug:"noivern",id:715,types:["flying","dragon"]},
+      {name:"Oranguru",slug:"oranguru",id:765,types:["normal","psychic"]},
+      {name:"Orthworm",slug:"orthworm",id:968,types:["steel"]},
+      {name:"Palafin",slug:"palafin",id:964,types:["water"]},
+      {name:"Pangoro",slug:"pangoro",id:675,types:["fighting","dark"]},
+      {name:"Passimian",slug:"passimian",id:766,types:["fighting"]},
+      {name:"Patrat",slug:"patrat",id:504,types:["normal"]},
+      {name:"Pelipper",slug:"pelipper",id:279,types:["water","flying"]},
+      {name:"Pidgeot",slug:"pidgeot",id:18,types:["normal","flying"]},
+      {name:"Pikachu",slug:"pikachu",id:25,types:["electric"]},
+      {name:"Pinsir",slug:"pinsir",id:127,types:["bug"]},
+      {name:"Politoed",slug:"politoed",id:186,types:["water"]},
+      {name:"Polteageist",slug:"polteageist",id:855,types:["ghost"]},
+      {name:"Primarina",slug:"primarina",id:730,types:["water","fairy"]},
+      {name:"Quaquaval",slug:"quaquaval",id:910,types:["water","fighting"]},
+      {name:"Raichu",slug:"raichu",id:26,types:["electric"]},
+      {name:"Raichu (Alolan)",slug:"raichu-alola",id:26,types:["electric","psychic"],form:"Alolan"},
+      {name:"Rampardos",slug:"rampardos",id:409,types:["rock"]},
+      {name:"Reuniclus",slug:"reuniclus",id:579,types:["psychic"]},
+      {name:"Rhyperior",slug:"rhyperior",id:464,types:["ground","rock"]},
+      {name:"Roserade",slug:"roserade",id:407,types:["grass","poison"]},
+      {name:"Rotom",slug:"rotom",id:479,types:["electric","ghost"]},
+      {name:"Rotom (Heat)",slug:"rotom-heat",id:479,types:["electric","fire"],form:"Heat"},
+      {name:"Rotom (Wash)",slug:"rotom-wash",id:479,types:["electric","water"],form:"Wash"},
+      {name:"Rotom (Frost)",slug:"rotom-frost",id:479,types:["electric","ice"],form:"Frost"},
+      {name:"Rotom (Fan)",slug:"rotom-fan",id:479,types:["electric","flying"],form:"Fan"},
+      {name:"Rotom (Mow)",slug:"rotom-mow",id:479,types:["electric","grass"],form:"Mow"},
+      {name:"Runerigus",slug:"runerigus",id:867,types:["ground","ghost"]},
+      {name:"Sableye",slug:"sableye",id:302,types:["dark","ghost"]},
+      {name:"Salazzle",slug:"salazzle",id:758,types:["poison","fire"]},
+      {name:"Samurott",slug:"samurott",id:503,types:["water"]},
+      {name:"Samurott (Hisuian)",slug:"samurott-hisui",id:503,types:["water","dark"],form:"Hisuian"},
+      {name:"Sandaconda",slug:"sandaconda",id:844,types:["ground"]},
+      {name:"Scizor",slug:"scizor",id:212,types:["bug","steel"]},
+      {name:"Scovillain",slug:"scovillain",id:961,types:["grass","fire"]},
+      {name:"Serperior",slug:"serperior",id:497,types:["grass"]},
+      {name:"Sharpedo",slug:"sharpedo",id:319,types:["water","dark"]},
+      {name:"Simipour",slug:"simipour",id:516,types:["water"]},
+      {name:"Simisage",slug:"simisage",id:512,types:["grass"]},
+      {name:"Simisear",slug:"simisear",id:514,types:["fire"]},
+      {name:"Sinistcha",slug:"sinistcha",id:1013,types:["grass","ghost"]},
+      {name:"Skarmory",slug:"skarmory",id:227,types:["steel","flying"]},
+      {name:"Skeledirge",slug:"skeledirge",id:909,types:["fire","ghost"]},
+      {name:"Slowbro",slug:"slowbro",id:80,types:["water","psychic"]},
+      {name:"Slowbro (Galarian)",slug:"slowbro-galar",id:80,types:["poison","psychic"],form:"Galarian"},
+      {name:"Slowking",slug:"slowking",id:199,types:["water","psychic"]},
+      {name:"Slowking (Galarian)",slug:"slowking-galar",id:199,types:["poison","psychic"],form:"Galarian"},
+      {name:"Slurpuff",slug:"slurpuff",id:685,types:["fairy"]},
+      {name:"Sneasler",slug:"sneasler",id:903,types:["fighting","poison"]},
+      {name:"Snorlax",slug:"snorlax",id:143,types:["normal"]},
+      {name:"Spiritomb",slug:"spiritomb",id:442,types:["ghost","dark"]},
+      {name:"Starmie",slug:"starmie",id:121,types:["water","psychic"]},
+      {name:"Steelix",slug:"steelix",id:208,types:["steel","ground"]},
+      {name:"Stunfisk",slug:"stunfisk",id:618,types:["ground","electric"]},
+      {name:"Stunfisk (Galarian)",slug:"stunfisk-galar",id:618,types:["ground","steel"],form:"Galarian"},
+      {name:"Sylveon",slug:"sylveon",id:700,types:["fairy"]},
+      {name:"Talonflame",slug:"talonflame",id:663,types:["fire","flying"]},
+      {name:"Tauros",slug:"tauros",id:128,types:["normal"]},
+      {name:"Tauros (Combat)",slug:"tauros-paldea-combat-breed",id:128,types:["fighting"],sdSlug:"tauros-paldea-combat",form:"Paldean Combat"},
+      {name:"Tauros (Blaze)",slug:"tauros-paldea-blaze-breed",id:128,types:["fighting","fire"],sdSlug:"tauros-paldea-blaze",form:"Paldean Blaze"},
+      {name:"Tauros (Aqua)",slug:"tauros-paldea-aqua-breed",id:128,types:["fighting","water"],sdSlug:"tauros-paldea-aqua",form:"Paldean Aqua"},
+      {name:"Tinkaton",slug:"tinkaton",id:959,types:["steel","fairy"]},
+      {name:"Torkoal",slug:"torkoal",id:324,types:["fire"]},
+      {name:"Torterra",slug:"torterra",id:389,types:["grass","ground"]},
+      {name:"Toucannon",slug:"toucannon",id:733,types:["normal","flying"]},
+      {name:"Toxapex",slug:"toxapex",id:748,types:["poison","water"]},
+      {name:"Toxicroak",slug:"toxicroak",id:454,types:["poison","fighting"]},
+      {name:"Trevenant",slug:"trevenant",id:709,types:["ghost","grass"]},
+      {name:"Tsareena",slug:"tsareena",id:763,types:["grass"]},
+      {name:"Typhlosion",slug:"typhlosion",id:157,types:["fire"]},
+      {name:"Typhlosion (Hisuian)",slug:"typhlosion-hisui",id:157,types:["fire","ghost"],form:"Hisuian"},
+      {name:"Tyranitar",slug:"tyranitar",id:248,types:["rock","dark"]},
+      {name:"Tyrantrum",slug:"tyrantrum",id:697,types:["rock","dragon"]},
+      {name:"Umbreon",slug:"umbreon",id:197,types:["dark"]},
+      {name:"Vanilluxe",slug:"vanilluxe",id:584,types:["ice"]},
+      {name:"Vaporeon",slug:"vaporeon",id:134,types:["water"]},
+      {name:"Venusaur",slug:"venusaur",id:3,types:["grass","poison"]},
+      {name:"Victreebel",slug:"victreebel",id:71,types:["grass","poison"]},
+      {name:"Vivillon",slug:"vivillon",id:666,types:["bug","flying"]},
+      {name:"Volcarona",slug:"volcarona",id:637,types:["bug","fire"]},
+      {name:"Weavile",slug:"weavile",id:461,types:["dark","ice"]},
+      {name:"Whimsicott",slug:"whimsicott",id:547,types:["grass","fairy"]},
+      {name:"Wyrdeer",slug:"wyrdeer",id:899,types:["normal","psychic"]},
+      {name:"Zoroark",slug:"zoroark",id:571,types:["dark"]},
+      {name:"Zoroark (Hisuian)",slug:"zoroark-hisui",id:571,types:["normal","ghost"],form:"Hisuian"},
+    ];
+
+    // TYPES[i] → index i in TYPE_CHART rows (attacker) and columns (defender)
+    const TYPES = ["normal","fire","water","grass","electric","ice","fighting","poison","ground","flying","psychic","bug","rock","ghost","dragon","dark","steel","fairy"];
+
+    // TYPE_CHART[attacker][defender]
+    const TYPE_CHART = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,0.5,0,1,1,0.5,1],
+      [1,0.5,0.5,2,1,2,1,1,1,1,1,2,0.5,1,0.5,1,2,1],
+      [1,2,0.5,0.5,1,1,1,1,2,1,1,1,2,1,0.5,1,1,1],
+      [1,0.5,2,0.5,1,1,1,0.5,2,0.5,1,0.5,2,1,0.5,1,0.5,1],
+      [1,1,2,0.5,0.5,1,1,1,0,2,1,1,1,1,0.5,1,1,1],
+      [1,0.5,0.5,2,1,0.5,1,1,2,2,1,1,1,1,2,1,0.5,1],
+      [2,1,1,0.5,0.5,2,1,0.5,1,0.5,0.5,0.5,2,0,1,2,2,0.5],
+      [1,1,1,2,1,1,1,0.5,0.5,1,1,1,0.5,0.5,1,1,0,2],
+      [1,2,1,0.5,2,1,1,2,1,0,1,0.5,2,1,1,1,2,1],
+      [1,1,1,2,0.5,1,2,1,1,1,1,2,0.5,1,1,1,0.5,1],
+      [1,1,1,1,1,1,2,2,1,1,0.5,1,1,1,1,0,0.5,1],
+      [1,0.5,1,2,1,1,0.5,0.5,1,0.5,2,1,1,0.5,1,2,0.5,0.5],
+      [1,2,1,1,1,2,0.5,1,0.5,2,1,2,1,1,1,1,0.5,1],
+      [1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,0.5,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,0.5,0],
+      [1,1,1,1,1,1,0.5,1,1,1,2,1,1,2,1,0.5,1,0.5],
+      [1,0.5,0.5,1,0.5,2,1,1,1,1,1,1,2,1,1,1,0.5,2],
+      [1,0.5,1,1,1,1,2,0.5,1,1,1,1,0.5,1,1,2,0.5,1],
+    ];
+
+    const ITEMS = [
+      {name:"Air Balloon",category:"Survival",itemSprite:"air-balloon",effect:"Grants Ground immunity until hit"},
+      {name:"Alakazite",category:"Mega Stone",itemSprite:"alakazite",effect:"Mega Evolves Alakazam into Mega Alakazam"},
+      {name:"Aerodactylite",category:"Mega Stone",itemSprite:"aerodactylite",effect:"Mega Evolves Aerodactyl into Mega Aerodactyl"},
+      {name:"Ampharosite",category:"Mega Stone",itemSprite:"ampharosite",effect:"Mega Evolves Ampharos into Mega Ampharos"},
+      {name:"Aspear Berry",category:"Berry",itemSprite:"aspear-berry",effect:"Cures paralysis when holder is paralyzed"},
+      {name:"Assault Vest",category:"Bulk",itemSprite:"assault-vest",effect:"Increases Special Defense by 50% but prevents status moves"},
+      {name:"Black Glasses",category:"Damage",itemSprite:"black-glasses",effect:"Increases Dark-type move power by 20%"},
+      {name:"Bright Powder",category:"Utility",itemSprite:"bright-powder",effect:"Reduces accuracy of opponent by 10%"},
+      {name:"Charizardite Y",category:"Mega Stone",itemSprite:"charizardite-y",effect:"Mega Evolves Charizard into Mega Charizard Y"},
+      {name:"Charcoal",category:"Damage",itemSprite:"charcoal",effect:"Increases Fire-type move power by 20%"},
+      {name:"Charti Berry",category:"Berry",itemSprite:"charti-berry",effect:"Reduces super effective Rock damage by 50%"},
+      {name:"Chesto Berry",category:"Berry",itemSprite:"chesto-berry",effect:"Wakes up holder if asleep"},
+      {name:"Choice Band",category:"Choice",itemSprite:"choice-band",effect:"Increases Attack by 50% but locks into one move"},
+      {name:"Choice Scarf",category:"Choice",itemSprite:"choice-scarf",effect:"Increases Speed by 50% but locks into one move"},
+      {name:"Choice Specs",category:"Choice",itemSprite:"choice-specs",effect:"Increases Special Attack by 50% but locks into one move"},
+      {name:"Clear Amulet",category:"Survival",itemSprite:"clear-amulet",effect:"Prevents stat drops from opponent moves"},
+      {name:"Colbur Berry",category:"Berry",itemSprite:"colbur-berry",effect:"Reduces super effective Dark damage by 50%"},
+      {name:"Chople Berry",category:"Berry",itemSprite:"chople-berry",effect:"Reduces super effective Fighting damage by 50%"},
+      {name:"Dragon Fang",category:"Damage",itemSprite:"null",effect:"Increases Dragon-type move power by 20%"},
+      {name:"Dread Plate",category:"Damage",itemSprite:"dread-plate",effect:"Increases Dark-type move power by 20%"},
+      {name:"Eject Button",category:"Utility",itemSprite:"eject-button",effect:"Switches out when held Pokémon gets hit"},
+      {name:"Expert Belt",category:"Damage",itemSprite:"expert-belt",effect:"Increases super effective move power by 20%"},
+      {name:"Flame Orb",category:"Status",itemSprite:"flame-orb",effect:"Inflicts burn status"},
+      {name:"Focus Sash",category:"Survival",itemSprite:"focus-sash",effect:"Survives lethal hit with 1 HP once per battle"},
+      {name:"Gengarite",category:"Mega Stone",itemSprite:"gengarite",effect:"Mega Evolves Gengar into Mega Gengar"},
+      {name:"Gyaradosite",category:"Mega Stone",itemSprite:"gyaradosite",effect:"Mega Evolves Gyarados into Mega Gyarados"},
+      {name:"Haban Berry",category:"Berry",itemSprite:"haban-berry",effect:"Reduces super effective Dragon damage by 50%"},
+      {name:"Heracronite",category:"Mega Stone",itemSprite:"heracronite",effect:"Mega Evolves Heracross into Mega Heracross"},
+      {name:"Heavy-Duty Boots",category:"Survival",itemSprite:"heavy-duty-boots",effect:"Prevents damage from entry hazards"},
+      {name:"Kangaskhanite",category:"Mega Stone",itemSprite:"kangaskhanite",effect:"Mega Evolves Kangaskhan into Mega Kangaskhan"},
+      {name:"King's Rock",category:"Damage",itemSprite:"kings-rock",effect:"Adds 30% chance to flinch with moves"},
+      {name:"Leftovers",category:"Recovery",itemSprite:"leftovers",effect:"Restores 12.5% HP each turn"},
+      {name:"Life Orb",category:"Damage",itemSprite:"life-orb",effect:"Increases all move power by 30% but costs 10% HP per attack"},
+      {name:"Lum Berry",category:"Berry",itemSprite:"lum-berry",effect:"Cures any status condition once"},
+      {name:"Mental Herb",category:"Utility",itemSprite:"mental-herb",effect:"Removes attraction and Disable effects"},
+      {name:"Mystic Water",category:"Damage",itemSprite:"mystic-water",effect:"Increases Water-type move power by 20%"},
+      {name:"Occa Berry",category:"Berry",itemSprite:"occa-berry",effect:"Reduces super effective Fire damage by 50%"},
+      {name:"Passho Berry",category:"Berry",itemSprite:"passho-berry",effect:"Reduces super effective Water damage by 50%"},
+      {name:"Red Card",category:"Reactive",itemSprite:"red-card",effect:"Switches out attacker when held Pokémon gets hit"},
+      {name:"Rocky Helmet",category:"Bulk",itemSprite:"rocky-helmet",effect:"Deals 12.5% recoil to physical attackers"},
+      {name:"Roseli Berry",category:"Berry",itemSprite:"roseli-berry",effect:"Reduces super effective Fairy damage by 50%"},
+      {name:"Safety Goggles",category:"Survival",itemSprite:"safety-goggles",effect:"Prevents damage from weather and powder moves"},
+      {name:"Scizorite",category:"Mega Stone",itemSprite:"scizorite",effect:"Mega Evolves Scizor into Mega Scizor"},
+      {name:"Shell Bell",category:"Recovery",itemSprite:"shell-bell",effect:"Restores 12.5% of damage dealt to user"},
+      {name:"Shuca Berry",category:"Berry",itemSprite:"shuca-berry",effect:"Reduces super effective Ground damage by 50%"},
+      {name:"Silk Scarf",category:"Damage",itemSprite:"silk-scarf",effect:"Increases Normal-type move power by 20%"},
+      {name:"Sitrus Berry",category:"Berry",itemSprite:"sitrus-berry",effect:"Restores 25% HP when holder drops below 25%"},
+      {name:"Soft Sand",category:"Damage",itemSprite:"soft-sand",effect:"Increases Ground-type move power by 20%"},
+      {name:"Throat Spray",category:"Stat Boost",itemSprite:"throat-spray",effect:"Boosts Special Attack by 1 stage when Sound move is used"},
+      {name:"Toxic Orb",category:"Status",itemSprite:"toxic-orb",effect:"Inflicts badly poisoned status"},
+      {name:"Tyranitarite",category:"Mega Stone",itemSprite:"tyranitarite",effect:"Mega Evolves Tyranitar into Mega Tyranitar"},
+      {name:"Venusaurite",category:"Mega Stone",itemSprite:"venusaurite",effect:"Mega Evolves Venusaur into Mega Venusaur"},
+      {name:"Wacan Berry",category:"Berry",itemSprite:"wacan-berry",effect:"Reduces super effective Electric damage by 50%"},
+      {name:"Weakness Policy",category:"Reactive",itemSprite:"weakness-policy",effect:"Boosts Attack and SpAtk by +2 when hit super effectively"},
+      {name:"White Herb",category:"Utility",itemSprite:"white-herb",effect:"Clears stat drops when holder receives one"},
+      {name:"Yache Berry",category:"Berry",itemSprite:"yache-berry",effect:"Reduces super effective Ice damage by 50%"},
+    ];
+
+    const USAGE = {
+      "Incineroar": 54.37, "Sneasler": 45.13, "Garchomp": 37.15,
+      "Sinistcha": 34.62, "Kingambit": 27.01, "Basculegion": 22.15,
+      "Whimsicott": 20.06, "Charizard": 17.81, "Floette": 17.78,
+      "Rotom (Wash)": 16.03, "Pelipper": 16.00, "Tyranitar": 15.44,
+      "Dragonite": 13.66, "Archaludon": 12.79, "Gengar": 12.26,
+      "Farigiraf": 11.60, "Aerodactyl": 11.01, "Venusaur": 10.95,
+      "Maushold": 10.61, "Froslass": 9.73, "Milotic": 8.42,
+      "Excadrill": 7.95, "Gardevoir": 7.64, "Corviknight": 7.49,
+      "Talonflame": 6.64
+    };
+
+    const SYNERGIES = [
+      {id:1,name:"Incineroar + Sinistcha Core",category:"Support",usage:39,blurb:"Most used core in the meta. Sinistcha redirects with Rage Powder + Trick Room, Incineroar Fake Out / Parting Shot.",cores:["Incineroar","Sinistcha"],partners:["Garchomp","Kingambit","Excadrill"]},
+      {id:2,name:"Sneasler Unburden",category:"Offensive",usage:45.13,blurb:"White Herb trigger doubles Speed after use; Fake Out + Close Combat/Dire Claw combo.",cores:["Sneasler"],partners:["Incineroar","Whimsicott","Maushold"]},
+      {id:3,name:"Drought Sun Core",category:"Weather",usage:17.81,blurb:"Mega Charizard Y sets Drought, Chlorophyll Venusaur + Sleep Powder setup.",cores:["Charizard","Venusaur"],partners:["Pelipper","Rotom (Wash)"]},
+      {id:4,name:"Perish Trap",category:"Trick Room",usage:12.26,blurb:"Shadow Tag Mega Gengar traps with Perish Song; Politoed provides Rain cover.",cores:["Gengar","Politoed"],partners:["Sinistcha","Froslass"]},
+      {id:5,name:"Sand Rush Speed",category:"Weather",usage:15.44,blurb:"Sand Stream Mega Tyranitar + Sand Rush Excadrill doubles Speed setup.",cores:["Tyranitar","Excadrill"],partners:["Garchomp","Gigalith"]},
+      {id:6,name:"Basculegion Rain",category:"Weather",usage:22.15,blurb:"Swift Swim + Last Respects; pairs with Pelipper or Politoed for Rain.",cores:["Basculegion","Pelipper"],partners:["Milotic","Rotom (Wash)"]},
+      {id:7,name:"Tailwind Aerodactyl",category:"Support",usage:11.01,blurb:"Speed pressure + Rock Slide; 11% usage, common Tailwind setter.",cores:["Aerodactyl"],partners:["Charizard","Dragonite","Pidgeot"]},
+      {id:8,name:"Kingambit Defiant",category:"Offensive",usage:27.01,blurb:"Defiant raises Attack when Intimidated; partner with Incineroar Intimidate.",cores:["Kingambit","Incineroar"],partners:["Garchomp","Excadrill"]},
+      {id:9,name:"Garchomp + Follow Me",category:"Offensive",usage:37.15,blurb:"Maushold/Floette redirect while Garchomp Earthquakes freely.",cores:["Garchomp","Maushold"],partners:["Sinistcha","Whimsicott"]},
+      {id:10,name:"Fairy Aura Floette",category:"Offensive",usage:17.78,blurb:"Floettite gives Fairy Aura (17.78% usage!), boosts all Fairy moves by 33%.",cores:["Floette"],partners:["Azumarill","Primarina","Mimikyu"]},
+      {id:11,name:"Trick Room Core",category:"Trick Room",usage:34.62,blurb:"Sinistcha sets TR with Rage Powder protection + slow sweepers.",cores:["Sinistcha"],partners:["Chandelure","Cofagrigus","Torkoal"]},
+      {id:12,name:"Froslass Blizzard Setup",category:"Weather",usage:9.73,blurb:"Mega Froslass Snow Warning Aurora Veil + Blizzard, 9.73% usage.",cores:["Froslass"],partners:["Pelipper","Rotom (Wash)"]},
+    ];
+
+    // ─── Caches ──────────────────────────────────────────────────────────────
+    const pokemonCache = {};
+    const moveTypeCache = {}; // moveName → type string
+
+    // ─── Ability immunities (ability slug → list of immune type strings) ─────
+    const ABILITY_IMMUNITIES = {
+      'levitate':        ['ground'],
+      'flash-fire':      ['fire'],
+      'water-absorb':    ['water'],
+      'volt-absorb':     ['electric'],
+      'motor-drive':     ['electric'],
+      'lightning-rod':   ['electric'],
+      'storm-drain':     ['water'],
+      'sap-sipper':      ['grass'],
+      'earth-eater':     ['ground'],
+      'dry-skin':        ['water'],
+      'well-baked-body': ['fire'],
+      'wind-rider':      ['flying'],
+    };
+
+    // Ability damage modifiers: ability → { type: multiplier }
+    // Applied as a final multiplier on top of type-chart effectiveness
+    const ABILITY_MODIFIERS = {
+      'thick-fat':       { fire: 0.5, ice: 0.5 },   // halves Fire and Ice
+      'heatproof':       { fire: 0.5 },               // halves Fire
+      'purifying-salt':  { ghost: 0.5 },              // halves Ghost
+      'fluffy':          { fire: 2 },                  // doubles Fire (contact moves halved but irrelevant here)
+    };
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+    function getSpriteUrl(pokemon) {
+      const slug = pokemon.sdSlug || pokemon.slug;
+      return `https://play.pokemonshowdown.com/sprites/ani/${slug}.gif`;
+    }
+
+    function TypeBadge({ type }) {
+      return <span className={`type-badge type-${type.toLowerCase()}`}>{type}</span>;
+    }
+
+    function usePokemon(slug) {
+      const [data, setData] = useState(pokemonCache[slug] || null);
+      const [loading, setLoading] = useState(false);
+
+      useEffect(() => {
+        if (!slug) return;
+        if (pokemonCache[slug]) { setData(pokemonCache[slug]); return; }
+        setLoading(true);
+        fetch(`https://pokeapi.co/api/v2/pokemon/${slug}`)
+          .then(r => r.json())
+          .then(d => { pokemonCache[slug] = d; setData(d); setLoading(false); })
+          .catch(() => setLoading(false));
+      }, [slug]);
+
+      return { data, loading };
+    }
+
+    // ─── Compute defensive matchups for a Pokémon ────────────────────────────
+    function getDefMatchups(types) {
+      const weaknesses = [], resistances = [], immunities = [];
+      TYPES.forEach((attackType, attIdx) => {
+        let mult = 1;
+        types.forEach(defType => {
+          const defIdx = TYPES.indexOf(defType);
+          if (defIdx !== -1) mult *= TYPE_CHART[attIdx][defIdx];
+        });
+        if (mult === 0) immunities.push(attackType);
+        else if (mult >= 4) weaknesses.push({ type: attackType, mult: 4 });
+        else if (mult >= 2) weaknesses.push({ type: attackType, mult: 2 });
+        else if (mult <= 0.25) resistances.push({ type: attackType, mult: 0.25 });
+        else if (mult <= 0.5) resistances.push({ type: attackType, mult: 0.5 });
+      });
+      return { weaknesses, resistances, immunities };
+    }
+
+    // ─── Tooltip ─────────────────────────────────────────────────────────────
+    function PokemonTooltip({ pokemon, mousePos }) {
+      const { data, loading } = usePokemon(pokemon.slug);
+
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const ttW = 290, ttH = 360;
+      const left = mousePos.x + 14 + ttW > vw ? mousePos.x - ttW - 10 : mousePos.x + 14;
+      const top  = mousePos.y + 14 + ttH > vh ? mousePos.y - ttH - 10 : mousePos.y + 14;
+
+      if (loading && !data) {
+        return (
+          <div className="tooltip" style={{ left, top }}>
+            <div className="text-xs text-gray-400">Loading…</div>
+          </div>
+        );
+      }
+      if (!data) return null;
+
+      const statNames = ['HP','Atk','Def','SpA','SpD','Spe'];
+      const statValues = data.stats.map(s => s.base_stat);
+
+      const { weaknesses, resistances, immunities } = getDefMatchups(pokemon.types);
+
+      return (
+        <div className="tooltip" style={{ left, top }}>
+          <div className="flex justify-center mb-1">
+            <div className="sprite-box-sm">
+              <img src={getSpriteUrl(pokemon)} alt={pokemon.name} loading="lazy" />
+            </div>
+          </div>
+          <div className="text-sm font-bold text-white mb-1 text-center">{pokemon.name}</div>
+          <div className="flex gap-1 mb-2 justify-center flex-wrap">
+            {pokemon.types.map(t => <TypeBadge key={t} type={t} />)}
+          </div>
+          <div className="text-xs space-y-0.5 mb-2">
+            {statNames.map((name, i) => (
+              <div key={name}>
+                <div className="flex justify-between" style={{color:'#94a3b8'}}>
+                  <span>{name}</span><span className="font-mono">{statValues[i]}</span>
+                </div>
+                <div className="stat-bar">
+                  <div className="stat-bar-fill" style={{width:`${Math.min((statValues[i]/180)*100,100)}%`}}></div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {immunities.length > 0 && (
+            <div className="mb-1">
+              <div className="text-xs font-semibold mb-0.5" style={{color:'#60a5fa'}}>Immune:</div>
+              <div className="flex flex-wrap gap-0.5">{immunities.map(t => <TypeBadge key={t} type={t} />)}</div>
+            </div>
+          )}
+          {weaknesses.length > 0 && (
+            <div className="mb-1">
+              <div className="text-xs font-semibold mb-0.5" style={{color:'#f87171'}}>Weak to:</div>
+              <div className="flex flex-wrap gap-0.5">
+                {weaknesses.sort((a,b)=>b.mult-a.mult).map(w => (
+                  <span key={w.type} className="inline-flex items-center gap-0.5">
+                    <TypeBadge type={w.type} />
+                    {w.mult === 4 && <span style={{color:'#f87171',fontSize:'0.6rem',fontWeight:'bold'}}>×4</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {resistances.length > 0 && (
+            <div>
+              <div className="text-xs font-semibold mb-0.5" style={{color:'#4ade80'}}>Resists:</div>
+              <div className="flex flex-wrap gap-0.5">
+                {resistances.map(r => (
+                  <span key={r.type} className="inline-flex items-center gap-0.5">
+                    <TypeBadge type={r.type} />
+                    {r.mult === 0.25 && <span style={{color:'#4ade80',fontSize:'0.6rem'}}>¼</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ─── Roster Tab ──────────────────────────────────────────────────────────
+    function RosterTab({ team, onAddToTeam, onHoverPokemon, tooltipData }) {
+      const [search, setSearch] = useState("");
+      const [typeFilter, setTypeFilter] = useState([]);
+
+      const filtered = useMemo(() => {
+        return ROSTER.filter(p => {
+          const ms = p.name.toLowerCase().includes(search.toLowerCase());
+          const mt = typeFilter.length === 0 || typeFilter.some(t => p.types.includes(t));
+          return ms && mt;
+        });
+      }, [search, typeFilter]);
+
+      const toggleType = (type) => setTypeFilter(prev =>
+        prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+      );
+
+      return (
+        <div>
+          <div className="mb-3">
+            <input
+              type="text"
+              placeholder="Search Pokémon…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full px-4 py-2 bg-gray-900 text-white rounded border border-gray-700 focus:outline-none focus:border-indigo-500 text-sm"
+            />
+          </div>
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            {TYPES.map(type => (
+              <button
+                key={type}
+                onClick={() => toggleType(type)}
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${typeFilter.includes(type) ? 'filter-active' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            ))}
+          </div>
+          <div className="grid gap-2" style={{gridTemplateColumns:'repeat(auto-fill,minmax(110px,1fr))'}}>
+            {filtered.map(pokemon => (
+              <div
+                key={pokemon.slug}
+                className="card p-2 rounded cursor-pointer hover:border-indigo-500 transition-all text-center relative"
+                onMouseEnter={e => onHoverPokemon(pokemon, e)}
+                onMouseLeave={() => onHoverPokemon(null)}
+              >
+                {pokemon.form && (
+                  <div className="absolute top-1 left-1 text-xs bg-indigo-700 text-white px-1.5 py-0.5 rounded font-semibold leading-none" style={{fontSize:'0.55rem'}}>
+                    {pokemon.form}
+                  </div>
+                )}
+                {team.some(p => p && p.slug === pokemon.slug) && (
+                  <div className="absolute top-1 right-1 text-xs bg-green-700 text-white px-1 py-0.5 rounded leading-none">✓</div>
+                )}
+                <div className="sprite-box mx-auto mb-1">
+                  <img src={getSpriteUrl(pokemon)} alt={pokemon.name} loading="lazy" />
+                </div>
+                <div className="text-xs font-bold mb-1 leading-tight">{pokemon.name}</div>
+                <div className="flex gap-1 justify-center flex-wrap mb-1.5">
+                  {pokemon.types.map(t => <TypeBadge key={t} type={t} />)}
+                </div>
+                {USAGE[pokemon.name] && (
+                  <div className="text-xs mb-1" style={{color:'#a5b4fc'}}>{USAGE[pokemon.name]}%</div>
+                )}
+                <button
+                  onClick={e => { e.stopPropagation(); onAddToTeam(pokemon); }}
+                  className="btn-primary w-full"
+                >
+                  + Add
+                </button>
+              </div>
+            ))}
+          </div>
+          {tooltipData && <PokemonTooltip pokemon={tooltipData.pokemon} mousePos={tooltipData.mousePos} />}
+        </div>
+      );
+    }
+
+    // ─── Team Slot Component ─────────────────────────────────────────────────
+    function TeamSlot({ mon, idx, onRemove, onSelect, item, onSetItem, moves, onSetMoves, ability, onSetAbility }) {
+      const { data: apiData } = usePokemon(mon ? mon.slug : null);
+      const [pokeSearch, setPokeSearch] = useState('');
+      const [moveTypes, setMoveTypes] = useState([null,null,null,null]);
+      const [tick, setTick] = useState(0);
+
+      const sortedItems = useMemo(() => [...ITEMS].sort((a,b) => a.name.localeCompare(b.name)), []);
+      const allMoves = useMemo(() =>
+        apiData ? [...new Set(apiData.moves.map(m => m.move.name))].sort() : [],
+      [apiData]);
+      const abilities = useMemo(() =>
+        apiData ? apiData.abilities.map(a => ({ name: a.ability.name, hidden: a.is_hidden })) : [],
+      [apiData]);
+
+      const filteredRoster = useMemo(() => {
+        if (!pokeSearch.trim()) return [];
+        return ROSTER.filter(p => p.name.toLowerCase().includes(pokeSearch.toLowerCase())).slice(0, 12);
+      }, [pokeSearch]);
+
+      // Fetch move types when moves change
+      useEffect(() => {
+        moves.forEach((moveName, i) => {
+          if (!moveName) { setMoveTypes(prev => { const n=[...prev]; n[i]=null; return n; }); return; }
+          if (moveTypeCache[moveName]) {
+            setMoveTypes(prev => { const n=[...prev]; n[i]=moveTypeCache[moveName]; return n; });
+            return;
+          }
+          fetch(`https://pokeapi.co/api/v2/move/${moveName}`)
+            .then(r => r.json())
+            .then(d => {
+              moveTypeCache[moveName] = d.type.name;
+              setTick(t => t+1);
+            })
+            .catch(() => {});
+        });
+      }, [moves]);
+
+      // Sync cached types after tick update
+      useEffect(() => {
+        setMoveTypes(moves.map(m => m ? (moveTypeCache[m] || null) : null));
+      }, [tick, moves]);
+
+      // Auto-select first non-hidden ability when Pokémon data loads
+      useEffect(() => {
+        if (abilities.length > 0 && !ability && onSetAbility) {
+          const first = abilities.find(a => !a.hidden) || abilities[0];
+          onSetAbility(first.name);
+        }
+      }, [abilities.length]); // eslint-disable-line
+
+      return (
+        <div className="card p-2 rounded text-center" style={{minWidth:0}}>
+          <div className="text-xs font-semibold mb-1" style={{color:'#64748b'}}>Slot {idx+1}</div>
+          {mon ? (
+            <>
+              <div className="sprite-box mx-auto mb-1">
+                <img src={getSpriteUrl(mon)} alt={mon.name} loading="lazy" />
+              </div>
+              <div className="font-bold text-xs mb-1">{mon.name}</div>
+              <div className="flex gap-1 justify-center mb-2 flex-wrap">
+                {mon.types.map(t => <TypeBadge key={t} type={t} />)}
+              </div>
+
+              {/* Ability selector */}
+              {abilities.length > 0 && (
+                <div className="mb-2">
+                  <select
+                    value={ability || ''}
+                    onChange={e => onSetAbility(e.target.value)}
+                    className="w-full px-1 py-1 bg-gray-900 text-white text-xs rounded border border-gray-700 mb-1"
+                  >
+                    <option value="">— Talent —</option>
+                    {abilities.map(a => (
+                      <option key={a.name} value={a.name}>
+                        {a.hidden ? '◇ ' : '⚡ '}{a.name.replace(/-/g,' ')}
+                      </option>
+                    ))}
+                  </select>
+                  {ability && (() => {
+                    const immuneTypes = ABILITY_IMMUNITIES[ability] || [];
+                    const mods = ABILITY_MODIFIERS[ability] || {};
+                    const hasEffect = immuneTypes.length > 0 || Object.keys(mods).length > 0;
+                    if (!hasEffect) return null;
+                    return (
+                      <div className="flex flex-wrap gap-1 items-center">
+                        {immuneTypes.map(t => (
+                          <span key={t} className="inline-flex items-center gap-0.5 text-xs" style={{color:'#93c5fd'}}>
+                            ✗<TypeBadge type={t} />
+                          </span>
+                        ))}
+                        {Object.entries(mods).map(([t, m]) => (
+                          <span key={t} className="inline-flex items-center gap-0.5 text-xs" style={{color: m < 1 ? '#86efac' : '#fca5a5'}}>
+                            {m < 1 ? '½' : '2×'}<TypeBadge type={t} />
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* Item */}
+              <select
+                value={item || ""}
+                onChange={e => onSetItem(e.target.value)}
+                className="w-full px-1 py-1 bg-gray-900 text-white text-xs rounded border border-gray-700 mb-2"
+              >
+                <option value="">— No Item —</option>
+                {sortedItems.map(it => <option key={it.name} value={it.name}>{it.name}</option>)}
+              </select>
+
+              {/* Moves */}
+              <div className="space-y-1 mb-2">
+                {[0,1,2,3].map(mi => (
+                  <div key={mi} className="flex items-center gap-1">
+                    <select
+                      value={moves[mi] || ""}
+                      onChange={e => {
+                        const nm = [...moves]; nm[mi] = e.target.value; onSetMoves(nm);
+                      }}
+                      className="move-select"
+                    >
+                      <option value="">Move {mi+1}…</option>
+                      {allMoves.map(m => (
+                        <option key={m} value={m}>{m.replace(/-/g,' ')}</option>
+                      ))}
+                    </select>
+                    {moveTypes[mi] && <TypeBadge type={moveTypes[mi]} />}
+                  </div>
+                ))}
+              </div>
+
+              <button onClick={onRemove} className="btn-danger w-full">Remove</button>
+            </>
+          ) : (
+            <div>
+              <div style={{color:'#374151',fontSize:'0.7rem'}} className="mb-2">— Empty —</div>
+              <input
+                type="text"
+                placeholder="Search Pokémon…"
+                value={pokeSearch}
+                onChange={e => setPokeSearch(e.target.value)}
+                className="w-full px-2 py-1 bg-gray-900 text-white text-xs rounded border border-gray-700 mb-1 focus:outline-none focus:border-indigo-500"
+              />
+              {filteredRoster.length > 0 && (
+                <div className="poke-picker mb-1">
+                  {filteredRoster.map(p => (
+                    <div
+                      key={p.slug}
+                      className="px-2 py-1 text-xs cursor-pointer hover:bg-indigo-800 text-left"
+                      style={{color:'#cbd5e1'}}
+                      onClick={() => { onSelect(p); setPokeSearch(''); }}
+                    >
+                      {p.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ─── Teambuilder Tab ──────────────────────────────────────────────────────
+    function TeambuilderTab({ team, setTeam, onHoverPokemon, tooltipData }) {
+      const [itemSelectors, setItemSelectors] = useState(Array(6).fill(null));
+      const [moveSelectors, setMoveSelectors] = useState(Array(6).fill(null).map(() => ['','','','']));
+      const [abilitySelectors, setAbilitySelectors] = useState(Array(6).fill(null));
+
+      const removeFromTeam = i => {
+        const t=[...team]; t[i]=null; setTeam(t);
+        const m=[...moveSelectors]; m[i]=['','','','']; setMoveSelectors(m);
+        const a=[...abilitySelectors]; a[i]=null; setAbilitySelectors(a);
+      };
+      const setInTeam = (i, p) => {
+        const t=[...team]; t[i]=p; setTeam(t);
+        const m=[...moveSelectors]; m[i]=['','','','']; setMoveSelectors(m);
+        const a=[...abilitySelectors]; a[i]=null; setAbilitySelectors(a);
+      };
+      const setItem = (i, v) => { const n=[...itemSelectors]; n[i]=v; setItemSelectors(n); };
+      const setMoves = (i, v) => { const n=[...moveSelectors]; n[i]=v; setMoveSelectors(n); };
+      const setAbility = (i, v) => { const n=[...abilitySelectors]; n[i]=v; setAbilitySelectors(n); };
+
+      // Defensive type chart — includes +/- balance score per row
+      // Ability immunities (×0) and modifiers (×0.5, ×2…) are applied per slot.
+      // Score per slot: immune=+2, ×0.25=+2, ×0.5=+1, ×1=0, ×2=−1, ×4=−2
+      const typeMatchups = useMemo(() => {
+        return TYPES.map((type, typeIdx) => {
+          const slotData = team.map((mon, slotIdx) => {
+            if (!mon) return null;
+            const selAbility = abilitySelectors[slotIdx];
+
+            // 1. Ability immunity check (overrides everything → ×0)
+            if (selAbility && (ABILITY_IMMUNITIES[selAbility] || []).includes(type)) return 0;
+
+            // 2. Standard type-chart effectiveness
+            let mult = 1;
+            mon.types.forEach(mt => { mult *= TYPE_CHART[typeIdx][TYPES.indexOf(mt)]; });
+
+            // 3. Ability modifier (e.g. thick-fat × 0.5)
+            const abilityMod = selAbility ? ((ABILITY_MODIFIERS[selAbility] || {})[type] ?? 1) : 1;
+            return mult * abilityMod;
+          });
+          const weakCount = slotData.filter(m => m !== null && m >= 2).length;
+          const score = slotData.reduce((sum, m) => {
+            if (m === null) return sum;
+            if (m === 0)      return sum + 2;   // immune counts double
+            if (m <= 0.25)    return sum + 2;   // ×0.25 resist
+            if (m <= 0.5)     return sum + 1;   // ×0.5 resist
+            if (m >= 4)       return sum - 2;   // ×4 weak counts double
+            if (m >= 2)       return sum - 1;   // ×2 weak
+            return sum;
+          }, 0);
+          return { type, slotData, weakCount, score };
+        });
+      }, [team, abilitySelectors]);
+
+      // Suggestions — scoring relative to the team's actual coverage balance.
+      // teamScore < 0  → real residual weakness (more weak than resistant)
+      // teamScore === 0 → balanced (covered each other)
+      // teamScore > 0  → covered
+      //
+      // Candidate scoring per type:
+      //   immune    → teamScore<0: +4 · teamScore≥0: +1 (strategic value)
+      //   ×0.25     → teamScore<0: +3
+      //   ×0.5      → teamScore<0: +2
+      //   ×2 weak   → teamScore<0: −2 (deepens hole) · teamScore≥0: 0 (team covers it)
+      //   ×4 weak   → teamScore<0: −4 · teamScore≥0: 0
+      const suggestions = useMemo(() => {
+        const teamSlugs = team.filter(Boolean).map(p => p.slug);
+        if (teamSlugs.length === 0) return ROSTER.slice(0, 8).map(p => ({pokemon:p,score:0}));
+
+        return ROSTER
+          .filter(p => !teamSlugs.includes(p.slug))
+          .map(p => {
+            let score = 0;
+            TYPES.forEach((type, typeIdx) => {
+              const teamScore = typeMatchups[typeIdx].score; // existing ± balance for this type
+
+              // Candidate's effectiveness when attacked by this type
+              let candMult = 1;
+              p.types.forEach(pt => { candMult *= TYPE_CHART[typeIdx][TYPES.indexOf(pt)]; });
+
+              if (candMult === 0) {
+                // Immune: excellent when covering a hole, still +1 otherwise
+                score += teamScore < 0 ? 4 : 1;
+              } else if (candMult <= 0.25) {
+                if (teamScore < 0) score += 3;
+              } else if (candMult <= 0.5) {
+                if (teamScore < 0) score += 2;
+              } else if (candMult >= 4) {
+                // ×4 shared weakness only hurts when team already negative
+                if (teamScore < 0) score -= 4;
+              } else if (candMult >= 2) {
+                // ×2 shared weakness only hurts when team already negative
+                if (teamScore < 0) score -= 2;
+              }
+              // neutral → 0
+            });
+            return { pokemon: p, score };
+          })
+          .sort((a,b) => b.score - a.score)
+          .slice(0, 8);
+      }, [team, typeMatchups]);
+
+      // Offensive coverage: find move types per slot
+      const offensiveMoveTypes = useMemo(() => {
+        return team.map((mon, idx) => {
+          if (!mon) return null;
+          const types = (moveSelectors[idx]||[]).map(m => m ? moveTypeCache[m] : null).filter(Boolean);
+          return { mon, types };
+        });
+      }, [team, moveSelectors]);
+
+      const activeCovMons = offensiveMoveTypes.filter(c => c && c.types.length > 0);
+      const hasCoverage = activeCovMons.length > 0;
+
+      // Coverage score per defending type: sum of each mon's best move result
+      // ×4=+2, ×2=+1, ×1=0, ×0.5=−1, ×0=0 (immune, can't hit)
+      const coverageRows = useMemo(() => {
+        return TYPES.map(defType => {
+          const defIdx = TYPES.indexOf(defType);
+          const perMon = activeCovMons.map(({ mon, types }) => {
+            if (!types.length) return { mon, bestMult: 0 };
+            let best = 0;
+            types.forEach(att => {
+              const ai = TYPES.indexOf(att);
+              if (ai !== -1) { const m = TYPE_CHART[ai][defIdx]; if (m > best) best = m; }
+            });
+            return { mon, bestMult: best };
+          });
+          const score = perMon.reduce((sum, { bestMult: m }) => {
+            if (m >= 4) return sum + 2;
+            if (m >= 2) return sum + 1;
+            if (m > 0 && m <= 0.5) return sum - 1;
+            return sum;
+          }, 0);
+          return { defType, perMon, score };
+        });
+      }, [activeCovMons, team, moveSelectors]);
+
+      const filledTeam = team.filter(Boolean);
+
+      // ── Shared cell renderer for both tables ──
+      const defCell = (mult, idx) => {
+        let bg = '#1a1a1a', label = '—', col = '#4b5563';
+        if (mult !== null) {
+          if (mult === 0)      { bg='#1e3a5f'; label='✗';  col='#93c5fd'; }
+          else if (mult<=0.25) { bg='#0f3b3b'; label='¼';  col='#5eead4'; }
+          else if (mult<=0.5)  { bg='#14341a'; label='½';  col='#86efac'; }
+          else if (mult>=4)    { bg='#4a0000'; label='4×'; col='#fca5a5'; }
+          else if (mult>=2)    { bg='#3b1a00'; label='2×'; col='#fdba74'; }
+          else                 { bg='#1a1a1a'; label='1';  col='#4b5563'; }
+        }
+        return <td key={idx} className="p-1.5 text-center border-l font-mono" style={{background:bg,borderColor:'rgba(255,255,255,0.04)',color:col}}>{label}</td>;
+      };
+
+      const scoreCol = (score) => {
+        const col = score > 0 ? '#4ade80' : score < 0 ? '#f87171' : '#4b5563';
+        const label = score > 0 ? `+${score}` : `${score}`;
+        return <td className="p-1.5 text-center border-l font-bold font-mono" style={{borderColor:'rgba(255,255,255,0.04)',color:col,minWidth:'36px'}}>{score !== 0 ? label : ''}</td>;
+      };
+
+      const defTableHalf = (rows) => (
+        <div className="scroll-h flex-1 min-w-0">
+          <table className="text-xs border-collapse w-full" style={{minWidth:'max-content'}}>
+            <thead>
+              <tr>
+                <th className="p-1.5 text-left sticky left-0 z-10" style={{background:'#0a0a0a',minWidth:'68px'}}>Atk</th>
+                {team.map((mon, idx) => (
+                  <th key={idx} className="p-1.5 text-center border-l" style={{background:'#0a0a0a',borderColor:'rgba(255,255,255,0.06)',minWidth:'52px'}}>
+                    <div className="truncate text-xs" title={mon ? mon.name : '—'}>{mon ? mon.name.split(' ')[0] : '—'}</div>
+                  </th>
+                ))}
+                <th className="p-1.5 text-center border-l" style={{background:'#0a0a0a',borderColor:'rgba(255,255,255,0.06)',minWidth:'36px',color:'#a5b4fc'}}>±</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ type, slotData, score }) => (
+                <tr key={type} className="border-t" style={{borderColor:'rgba(255,255,255,0.04)'}}>
+                  <td className="p-1.5 sticky left-0 z-10" style={{background:'#0d0d0d'}}><TypeBadge type={type} /></td>
+                  {slotData.map((mult, idx) => defCell(mult, idx))}
+                  {scoreCol(score)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+
+      const covCell = (bestMult, i) => {
+        let bg = '#1a1a1a', label = '—', col = '#4b5563';
+        if (bestMult >= 4)              { bg='#14341a'; label='4×'; col='#4ade80'; }
+        else if (bestMult >= 2)         { bg='#0f2e1a'; label='2×'; col='#86efac'; }
+        else if (bestMult > 0 && bestMult <= 0.5) { bg='#3b1a1a'; label='½'; col='#f87171'; }
+        else if (bestMult === 0)        { bg='#1e3a5f'; label='✗'; col='#93c5fd'; }
+        else if (bestMult === 1)        { bg='#1a1a1a'; label='1'; col='#4b5563'; }
+        return <td key={i} className="p-1.5 text-center border-l font-mono" style={{background:bg,borderColor:'rgba(255,255,255,0.04)',color:col}}>{label}</td>;
+      };
+
+      const covTableHalf = (rows) => (
+        <div className="scroll-h flex-1 min-w-0">
+          <table className="text-xs border-collapse w-full" style={{minWidth:'max-content'}}>
+            <thead>
+              <tr>
+                <th className="p-1.5 text-left sticky left-0 z-10" style={{background:'#0a0a0a',minWidth:'68px'}}>Def</th>
+                {activeCovMons.map(({ mon }, i) => (
+                  <th key={i} className="p-1.5 text-center border-l" style={{background:'#0a0a0a',borderColor:'rgba(255,255,255,0.06)',minWidth:'52px'}}>
+                    <div className="truncate text-xs">{mon.name.split(' ')[0]}</div>
+                  </th>
+                ))}
+                <th className="p-1.5 text-center border-l" style={{background:'#0a0a0a',borderColor:'rgba(255,255,255,0.06)',minWidth:'36px',color:'#a5b4fc'}}>±</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ defType, perMon, score }) => (
+                <tr key={defType} className="border-t" style={{borderColor:'rgba(255,255,255,0.04)'}}>
+                  <td className="p-1.5 sticky left-0 z-10" style={{background:'#0d0d0d'}}><TypeBadge type={defType} /></td>
+                  {perMon.map(({ bestMult }, i) => covCell(bestMult, i))}
+                  {scoreCol(score)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+
+      return (
+        <div className="space-y-8">
+          {/* ── Team Slots ── */}
+          <div>
+            <h3 className="text-lg font-bold mb-3" style={{color:'#a5b4fc'}}>Your Team</h3>
+            <div className="grid gap-3" style={{gridTemplateColumns:'repeat(auto-fit,minmax(155px,1fr))'}}>
+              {team.map((mon, idx) => (
+                <TeamSlot
+                  key={idx}
+                  mon={mon} idx={idx}
+                  onRemove={() => removeFromTeam(idx)}
+                  onSelect={p => setInTeam(idx, p)}
+                  item={itemSelectors[idx]}
+                  onSetItem={v => setItem(idx, v)}
+                  moves={moveSelectors[idx] || ['','','','']}
+                  onSetMoves={v => setMoves(idx, v)}
+                  ability={abilitySelectors[idx]}
+                  onSetAbility={v => setAbility(idx, v)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* ── Defensive Type Chart — split into 2 halves ── */}
+          {filledTeam.length > 0 && (
+            <div>
+              <h3 className="text-lg font-bold mb-1" style={{color:'#a5b4fc'}}>Defensive Coverage</h3>
+              <p className="text-xs mb-3" style={{color:'#64748b'}}>± score: immune +2 · ×0.25 +2 · ×0.5 +1 · ×2 −1 · ×4 −2</p>
+              <div className="flex gap-4 flex-wrap">
+                {defTableHalf(typeMatchups.slice(0, 9))}
+                {defTableHalf(typeMatchups.slice(9))}
+              </div>
+              <div className="flex flex-wrap gap-3 mt-2 text-xs" style={{color:'#64748b'}}>
+                <span><span style={{color:'#93c5fd'}}>✗</span> Immune</span>
+                <span><span style={{color:'#5eead4'}}>¼</span> ×0.25</span>
+                <span><span style={{color:'#86efac'}}>½</span> ×0.5</span>
+                <span style={{color:'#4b5563'}}>1 Neutral</span>
+                <span><span style={{color:'#fdba74'}}>2×</span> Weak</span>
+                <span><span style={{color:'#fca5a5'}}>4×</span> Very weak</span>
+              </div>
+            </div>
+          )}
+
+          {/* ── Offensive Coverage — split into 2 halves ── */}
+          {hasCoverage && (
+            <div>
+              <h3 className="text-lg font-bold mb-1" style={{color:'#a5b4fc'}}>Offensive Coverage</h3>
+              <p className="text-xs mb-3" style={{color:'#64748b'}}>Best move vs each defending type · ± score: 4× +2 · 2× +1 · ½ −1</p>
+              <div className="flex gap-4 flex-wrap">
+                {covTableHalf(coverageRows.slice(0, 9))}
+                {covTableHalf(coverageRows.slice(9))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Suggestions ── */}
+          <div>
+            <h3 className="text-lg font-bold mb-1" style={{color:'#a5b4fc'}}>Suggested Pokémon</h3>
+            {filledTeam.length > 0 && (
+              <p className="text-xs mb-3" style={{color:'#64748b'}}>Score relatif à l'équipe · Couvre une faille (score &lt; 0) : immune +4 · ¼ +3 · ½ +2 · Aggrave une faille : ×2 −2 · ×4 −4</p>
+            )}
+            <div className="grid gap-2" style={{gridTemplateColumns:'repeat(auto-fill,minmax(110px,1fr))'}}>
+              {suggestions.map(({ pokemon, score }) => (
+                <div
+                  key={pokemon.slug}
+                  className="card p-2 rounded cursor-pointer text-center transition-all hover:border-indigo-500"
+                  onMouseEnter={e => onHoverPokemon(pokemon, e)}
+                  onMouseLeave={() => onHoverPokemon(null)}
+                >
+                  <div className="sprite-box mx-auto mb-1">
+                    <img src={getSpriteUrl(pokemon)} alt={pokemon.name} loading="lazy" />
+                  </div>
+                  <div className="text-xs font-bold mb-1">{pokemon.name}</div>
+                  {filledTeam.length > 0 && (
+                    <div className="text-xs mb-1" style={{color:'#a5b4fc'}}>Score {score}</div>
+                  )}
+                  <button
+                    onClick={() => {
+                      const idx = team.findIndex(p => !p);
+                      if (idx !== -1) { const t=[...team]; t[idx]=pokemon; setTeam(t); }
+                    }}
+                    className="btn-primary w-full"
+                  >+ Add</button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {tooltipData && <PokemonTooltip pokemon={tooltipData.pokemon} mousePos={tooltipData.mousePos} />}
+        </div>
+      );
+    }
+
+    // ─── Items Tab ───────────────────────────────────────────────────────────
+    function ItemsTab() {
+      const [search, setSearch] = useState("");
+      const [cat, setCat] = useState("All");
+      const categories = ["All","Berry","Choice","Damage","Bulk","Survival","Stat Boost","Mega Stone","Recovery","Reactive","Status","Utility"];
+
+      const filtered = useMemo(() => ITEMS.filter(item => {
+        const ms = item.name.toLowerCase().includes(search.toLowerCase());
+        const mc = cat === "All" || item.category === cat;
+        return ms && mc;
+      }), [search, cat]);
+
+      return (
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Search items…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full px-4 py-2 bg-gray-900 text-white rounded border border-gray-700 focus:outline-none focus:border-indigo-500 text-sm"
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {categories.map(c => (
+              <button key={c} onClick={() => setCat(c)}
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${cat===c ? 'filter-active' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>
+                {c}
+              </button>
+            ))}
+          </div>
+          <div className="grid gap-2" style={{gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))'}}>
+            {filtered.map(item => (
+              <div key={item.name} className="card p-3 rounded text-center">
+                <div className="h-10 flex items-center justify-center mb-2">
+                  {item.itemSprite !== "null" ? (
+                    <img
+                      src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${item.itemSprite}.png`}
+                      alt={item.name} className="w-8 h-8"
+                      onError={e => { e.target.style.display='none'; }}
+                    />
+                  ) : <span className="text-xl">✨</span>}
+                </div>
+                <div className="text-xs font-bold mb-1">{item.name}</div>
+                <div className="text-xs bg-gray-800 px-2 py-0.5 rounded inline-block mb-1" style={{color:'#a5b4fc'}}>{item.category}</div>
+                <div className="text-xs" style={{color:'#94a3b8'}}>{item.effect}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // ─── Synergies Tab ────────────────────────────────────────────────────────
+    function SynergiesTab({ onHoverPokemon, tooltipData }) {
+      const [cat, setCat] = useState("All");
+      const categories = ["All","Weather","Trick Room","Setup","Offensive","Support"];
+      const filtered = useMemo(() =>
+        SYNERGIES.filter(s => cat==="All" || s.category===cat), [cat]
+      );
+
+      return (
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-1.5">
+            {categories.map(c => (
+              <button key={c} onClick={() => setCat(c)}
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${cat===c ? 'filter-active' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>
+                {c}
+              </button>
+            ))}
+          </div>
+          <div className="grid gap-4">
+            {filtered.map(synergy => {
+              const coreMons = ROSTER.filter(p => synergy.cores.includes(p.name));
+              const partnerMons = ROSTER.filter(p => synergy.partners.includes(p.name));
+              return (
+                <div key={synergy.id} className="card p-4 rounded border-l-4" style={{borderLeftColor:'#6366f1'}}>
+                  <div className="flex justify-between items-start mb-1">
+                    <div>
+                      <h4 className="text-sm font-bold text-white">{synergy.name}</h4>
+                      <div className="text-xs" style={{color:'#6366f1'}}>{synergy.category}</div>
+                    </div>
+                    {synergy.usage && (
+                      <div className="text-sm font-semibold" style={{color:'#a5b4fc'}}>{synergy.usage}%</div>
+                    )}
+                  </div>
+                  <p className="text-xs mb-3" style={{color:'#94a3b8'}}>{synergy.blurb}</p>
+                  <div className="mb-2">
+                    <div className="text-xs font-semibold mb-1" style={{color:'#64748b'}}>Core:</div>
+                    <div className="flex gap-2 flex-wrap">
+                      {coreMons.map(p => (
+                        <div key={p.slug} className="cursor-pointer hover:opacity-80"
+                          onMouseEnter={e => onHoverPokemon(p, e)}
+                          onMouseLeave={() => onHoverPokemon(null)}>
+                          <div className="sprite-box-sm"><img src={getSpriteUrl(p)} alt={p.name} loading="lazy" title={p.name} /></div>
+                          <div className="text-xs text-center" style={{color:'#94a3b8',fontSize:'0.6rem'}}>{p.name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {partnerMons.length > 0 && (
+                    <div>
+                      <div className="text-xs font-semibold mb-1" style={{color:'#64748b'}}>Partners:</div>
+                      <div className="flex gap-2 flex-wrap">
+                        {partnerMons.map(p => (
+                          <div key={p.slug} className="cursor-pointer hover:opacity-80"
+                            onMouseEnter={e => onHoverPokemon(p, e)}
+                            onMouseLeave={() => onHoverPokemon(null)}>
+                            <div className="sprite-box-sm"><img src={getSpriteUrl(p)} alt={p.name} loading="lazy" title={p.name} /></div>
+                            <div className="text-xs text-center" style={{color:'#94a3b8',fontSize:'0.6rem'}}>{p.name}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {tooltipData && <PokemonTooltip pokemon={tooltipData.pokemon} mousePos={tooltipData.mousePos} />}
+        </div>
+      );
+    }
+
+    // ─── App ─────────────────────────────────────────────────────────────────
+    function App() {
+      const [activeTab, setActiveTab] = useState("roster");
+      const [team, setTeam] = useState([null,null,null,null,null,null]);
+      const [tooltipData, setTooltipData] = useState(null);
+
+      const handleHoverPokemon = useCallback((pokemon, event) => {
+        if (pokemon && event) {
+          setTooltipData({ pokemon, mousePos: { x: event.clientX, y: event.clientY } });
+        } else {
+          setTooltipData(null);
+        }
+      }, []);
+
+      const handleAddToTeam = useCallback((pokemon) => {
+        // Prevent duplicates
+        if (team.some(p => p && p.slug === pokemon.slug)) return;
+        const idx = team.findIndex(p => !p);
+        if (idx !== -1) {
+          const t = [...team]; t[idx] = pokemon; setTeam(t);
+        }
+      }, [team]);
+
+      const tabs = [
+        { id: 'roster', label: 'Roster' },
+        { id: 'teambuilder', label: 'Teambuilder' },
+        { id: 'items', label: 'Items' },
+        { id: 'synergies', label: 'Synergies' },
+      ];
+
+      return (
+        <div className="min-h-screen" style={{backgroundColor:'#0a0a0a'}}>
+          <header style={{backgroundColor:'#111111',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+            <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+              <div>
+                <h1 className="text-2xl font-bold" style={{color:'#a5b4fc',letterSpacing:'-0.02em'}}>Champions DB</h1>
+                <div className="text-xs" style={{color:'#4b5563'}}>Regulation M-A · April – June 2026</div>
+              </div>
+              <nav className="flex gap-2">
+                {tabs.map(t => (
+                  <button key={t.id} onClick={() => setActiveTab(t.id)}
+                    className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${activeTab===t.id ? 'tab-active' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>
+                    {t.label}
+                  </button>
+                ))}
+              </nav>
+              <div className="text-xs px-2 py-1 rounded font-semibold" style={{background:'rgba(99,102,241,0.2)',color:'#a5b4fc',border:'1px solid rgba(99,102,241,0.3)'}}>
+                {team.filter(Boolean).length}/6
+              </div>
+            </div>
+            {/* Team preview bar */}
+            <div className="max-w-7xl mx-auto px-4 pb-2 flex gap-1.5 items-center">
+              <span className="text-xs mr-1" style={{color:'#374151'}}>Team:</span>
+              {team.map((mon, idx) => (
+                <div key={idx} className="w-8 h-8 rounded flex items-center justify-center" style={{background:'#1a1a1a',border:'1px solid rgba(255,255,255,0.06)'}}>
+                  {mon
+                    ? <img src={getSpriteUrl(mon)} alt={mon.name} className="w-8 h-8 object-contain" loading="lazy" title={mon.name} />
+                    : <span style={{color:'#2d3748',fontSize:'0.7rem'}}>·</span>
+                  }
+                </div>
+              ))}
+            </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-4 py-6">
+            {activeTab==='roster' && <RosterTab team={team} onAddToTeam={handleAddToTeam} onHoverPokemon={handleHoverPokemon} tooltipData={tooltipData} />}
+            {activeTab==='teambuilder' && <TeambuilderTab team={team} setTeam={setTeam} onHoverPokemon={handleHoverPokemon} tooltipData={tooltipData} />}
+            {activeTab==='items' && <ItemsTab />}
+            {activeTab==='synergies' && <SynergiesTab onHoverPokemon={handleHoverPokemon} tooltipData={tooltipData} />}
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+  </script>
+</body>
+</html>
