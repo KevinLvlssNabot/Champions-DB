@@ -1180,81 +1180,182 @@
     }
 
     function TrackerPokeSlot({ entry, onUpdate, onRemove }) {
-      const { data: apiData } = usePokemon(entry.name ? toTrackerSlug(entry.name) : null);
+      // Search state for the Pokémon name picker (like TeamSlot)
+      const [nameSearch, setNameSearch] = useState('');
+      const [showPicker, setShowPicker] = useState(false);
       const [abilityDropdown, setAbilityDropdown] = useState(false);
-      const abilities = useMemo(() => apiData ? apiData.abilities.map(a => ({ name: a.ability.name, hidden: a.is_hidden })) : [], [apiData]);
+
+      // Sync nameSearch with entry.name when it changes externally (e.g. import)
+      useEffect(() => { setNameSearch(''); }, [entry.name]);
+
+      // Fetch abilities once a valid ROSTER name is set
+      const rosterSlug = useMemo(() => {
+        const found = ROSTER.find(p => p.name.toLowerCase() === (entry.name||'').toLowerCase());
+        return found ? (found.sdSlug || found.slug) : null;
+      }, [entry.name]);
+      const { data: apiData } = usePokemon(rosterSlug);
+      const abilities = useMemo(() =>
+        apiData ? apiData.abilities.map(a => ({ name: a.ability.name, hidden: a.is_hidden })) : [],
+      [apiData]);
+
+      // Filter ROSTER suggestions while typing
+      const suggestions = useMemo(() => {
+        if (!nameSearch.trim()) return [];
+        return ROSTER.filter(p => p.name.toLowerCase().includes(nameSearch.toLowerCase())).slice(0, 10);
+      }, [nameSearch]);
+
+      const selectPokemon = (p) => {
+        onUpdate({ ...entry, name: p.name });
+        setNameSearch('');
+        setShowPicker(false);
+      };
+
+      const clearPokemon = () => {
+        onUpdate({ ...entry, name: '', ability: '', moves: ['','','',''], ko: false });
+        setNameSearch('');
+      };
 
       return (
-        <div className="card p-2 rounded text-xs" style={{marginBottom:'8px',opacity: entry.ko ? 0.6 : 1, borderColor: entry.ko ? 'rgba(220,38,38,0.5)' : 'rgba(255,255,255,0.07)'}}>
-          <div className="flex gap-2 items-center mb-2">
+        <div className="card p-2 rounded text-xs" style={{marginBottom:'8px', opacity: entry.ko ? 0.65 : 1, borderColor: entry.ko ? 'rgba(220,38,38,0.45)' : 'rgba(255,255,255,0.07)'}}>
+          {/* Header: sprite + name search + KO */}
+          <div style={{display:'flex', gap:6, alignItems:'center', marginBottom:6}}>
             <TrackerSprite name={entry.name} size={32} />
-            <input
-              type="text"
-              placeholder="Pokémon name"
-              value={entry.name}
-              onChange={e => onUpdate({...entry, name: e.target.value})}
-              className="flex-1 px-2 py-1 bg-gray-900 text-white text-xs rounded border border-gray-700"
-            />
-            <button onClick={() => onUpdate({...entry, ko: !entry.ko})} style={{padding:'2px 6px', background: entry.ko ? 'rgba(220,38,38,0.7)' : 'rgba(99,102,241,0.3)', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.7rem'}}>
+            <div style={{flex:1, minWidth:0, position:'relative'}}>
+              {entry.name ? (
+                /* Name is set — show it as a tag with a clear button */
+                <div style={{display:'flex', alignItems:'center', gap:4, background:'#0f0f0f', border:'1px solid rgba(99,102,241,0.3)', borderRadius:4, padding:'2px 6px'}}>
+                  <span style={{flex:1, fontSize:'0.7rem', color:'#f1f5f9', fontWeight:600}}>{entry.name}</span>
+                  <button onClick={clearPokemon} style={{background:'none', border:'none', color:'#64748b', cursor:'pointer', fontSize:12, padding:0, lineHeight:1}}>×</button>
+                </div>
+              ) : (
+                /* Search mode */
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Search Pokémon…"
+                    value={nameSearch}
+                    onChange={e => { setNameSearch(e.target.value); setShowPicker(true); }}
+                    onFocus={() => setShowPicker(true)}
+                    onBlur={() => setTimeout(() => setShowPicker(false), 150)}
+                    style={{width:'100%', background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.1)', borderRadius:4, color:'#f1f5f9', fontSize:'0.7rem', padding:'3px 6px'}}
+                  />
+                  {showPicker && suggestions.length > 0 && (
+                    <div style={{position:'absolute', top:'100%', left:0, right:0, background:'#141428', border:'1px solid rgba(99,102,241,0.35)', borderRadius:4, zIndex:200, maxHeight:120, overflowY:'auto'}}>
+                      {suggestions.map(p => (
+                        <div key={p.slug} onMouseDown={() => selectPokemon(p)}
+                          style={{padding:'4px 8px', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.04)', color:'#cbd5e1', fontSize:'0.7rem', display:'flex', alignItems:'center', gap:6}}
+                          onMouseEnter={e=>e.currentTarget.style.background='rgba(99,102,241,0.2)'}
+                          onMouseLeave={e=>e.currentTarget.style.background=''}
+                        >
+                          <TrackerSprite name={p.name} size={20} />
+                          {p.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <button onClick={() => onUpdate({...entry, ko: !entry.ko})}
+              style={{padding:'2px 6px', background: entry.ko ? 'rgba(220,38,38,0.7)' : 'rgba(99,102,241,0.3)', color:'white', border:'none', borderRadius:4, cursor:'pointer', fontSize:'0.65rem', flexShrink:0}}>
               {entry.ko ? '✕ KO' : '● Live'}
             </button>
           </div>
-          <input
-            type="text"
-            placeholder="Ability"
-            value={entry.ability}
-            onChange={e => onUpdate({...entry, ability: e.target.value})}
-            onFocus={() => setAbilityDropdown(true)}
-            onBlur={() => setTimeout(() => setAbilityDropdown(false), 150)}
-            className="w-full px-2 py-1 bg-gray-900 text-white text-xs rounded border border-gray-700 mb-1"
-          />
-          {abilityDropdown && abilities.length > 0 && (
-            <div style={{maxHeight:'80px', overflowY:'auto', background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'4px', marginBottom:'8px'}}>
-              {abilities.map(a => (
-                <div key={a.name} onClick={() => { onUpdate({...entry, ability: a.name}); setAbilityDropdown(false); }} style={{padding:'4px 8px', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.04)', color:'#cbd5e1', fontSize:'0.7rem'}}>
-                  {a.name}
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="space-y-1 mb-2">
+
+          {/* Ability */}
+          <div style={{position:'relative', marginBottom:4}}>
+            <input
+              type="text"
+              placeholder="Ability…"
+              value={entry.ability}
+              onChange={e => onUpdate({...entry, ability: e.target.value})}
+              onFocus={() => setAbilityDropdown(true)}
+              onBlur={() => setTimeout(() => setAbilityDropdown(false), 150)}
+              style={{width:'100%', background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.08)', borderRadius:4, color:'#cbd5e1', fontSize:'0.65rem', padding:'2px 6px'}}
+            />
+            {abilityDropdown && abilities.length > 0 && (
+              <div style={{position:'absolute', top:'100%', left:0, right:0, background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.08)', borderRadius:4, zIndex:100, maxHeight:80, overflowY:'auto'}}>
+                {abilities.map(a => (
+                  <div key={a.name} onMouseDown={() => { onUpdate({...entry, ability: a.name.replace(/-/g,' ')}); setAbilityDropdown(false); }}
+                    style={{padding:'3px 8px', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.04)', color:'#cbd5e1', fontSize:'0.65rem'}}
+                    onMouseEnter={e=>e.currentTarget.style.background='rgba(99,102,241,0.2)'}
+                    onMouseLeave={e=>e.currentTarget.style.background=''}>
+                    {a.hidden ? '◇ ' : '⚡ '}{a.name.replace(/-/g,' ')}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Moves */}
+          <div style={{display:'flex', flexDirection:'column', gap:3, marginBottom:6}}>
             {[0,1,2,3].map(i => (
-              <input key={i} type="text" placeholder={`Move ${i+1}`} value={entry.moves[i]} onChange={e => { const nm=[...entry.moves]; nm[i]=e.target.value; onUpdate({...entry, moves: nm}); }} className="w-full px-2 py-1 bg-gray-900 text-white text-xs rounded border border-gray-700" />
+              <input key={i} type="text" placeholder={`Move ${i+1}…`} value={entry.moves[i]||''}
+                onChange={e => { const nm=[...entry.moves]; nm[i]=e.target.value; onUpdate({...entry, moves:nm}); }}
+                style={{width:'100%', background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.06)', borderRadius:3, color:'#94a3b8', fontSize:'0.65rem', padding:'2px 5px'}} />
             ))}
           </div>
-          <button onClick={() => onRemove()} className="btn-danger w-full">Remove</button>
+          <button onClick={() => onRemove()} className="btn-danger w-full" style={{fontSize:'0.65rem', padding:'2px'}}>Remove</button>
         </div>
       );
     }
 
     function ActiveSlot({ slotIdx, team, activeIdx, move, ko, onSetActive, onSetMove, onSetKO, side }) {
-      const filteredTeam = useMemo(() => team.filter(p => p && p.name), [team]);
-      const activeMon = team[activeIdx];
-      const activeMoves = useMemo(() => {
-        const moves = [];
-        if (activeMon) {
-          const idx = team.indexOf(activeMon);
-          if (idx !== -1) {
-            // This needs moveSelectors passed in - for now just use a placeholder
-          }
-        }
-        return moves;
-      }, [activeMon]);
+      // Only members with a name are selectable
+      const namedMembers = useMemo(() =>
+        team.map((p, i) => ({ p, i })).filter(({ p }) => p && p.name),
+      [team]);
+
+      // null/undefined → use "" so the select stays on the placeholder
+      const selectVal = (activeIdx !== null && activeIdx !== undefined) ? String(activeIdx) : '';
+      const activeMon = (selectVal !== '') ? team[parseInt(selectVal)] : null;
+
+      // Available moves from the selected slot's entries
+      const availableMoves = useMemo(() =>
+        activeMon ? (activeMon.moves || []).filter(m => m && m.trim()) : [],
+      [activeMon]);
+
+      const isMine = side === 'my';
+      const accentColor = isMine ? 'rgba(99,102,241,0.2)' : 'rgba(245,158,11,0.2)';
+      const accentBorder = isMine ? 'rgba(99,102,241,0.2)' : 'rgba(245,158,11,0.2)';
 
       return (
-        <div style={{marginBottom:'12px', padding:'8px', background:'#1a1a2e', borderRadius:'4px', border:'1px solid rgba(99,102,241,0.2)'}}>
-          <div style={{fontSize:'0.7rem', color:'#64748b', marginBottom:'4px'}}>Slot {slotIdx+1}</div>
-          <div style={{display:'flex', gap:'8px', alignItems:'center', marginBottom:'6px'}}>
-            <TrackerSprite name={activeMon?.name || ''} size={28} />
-            <select value={activeIdx} onChange={e => { onSetActive(parseInt(e.target.value)); onSetMove(''); }} style={{flex:1, padding:'4px', background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.1)', color:'#e2e8f0', borderRadius:'4px', fontSize:'0.7rem'}}>
-              <option value="">— Select Pokémon —</option>
-              {filteredTeam.map((p, idx) => <option key={idx} value={team.indexOf(p)}>{p.name}</option>)}
+        <div style={{marginBottom:8, padding:6, background:'#0f0f0f', borderRadius:4, border:`1px solid ${accentBorder}`}}>
+          <div style={{fontSize:'0.65rem', color:'#64748b', marginBottom:3}}>Slot {slotIdx+1}</div>
+          {/* Pokémon selector row */}
+          <div style={{display:'flex', gap:5, alignItems:'center', marginBottom:4}}>
+            <TrackerSprite name={activeMon?.name || ''} size={26} />
+            <select
+              value={selectVal}
+              onChange={e => {
+                const v = e.target.value;
+                onSetActive(v === '' ? null : parseInt(v));
+                onSetMove(''); // reset move when Pokémon changes
+              }}
+              style={{flex:1, padding:'3px 4px', background:'#1a1a1a', border:`1px solid ${accentColor}`, color: selectVal ? '#f1f5f9' : '#4b5563', borderRadius:4, fontSize:'0.65rem'}}
+            >
+              <option value="">— select —</option>
+              {namedMembers.map(({ p, i }) => (
+                <option key={i} value={i}>{p.name}</option>
+              ))}
             </select>
-            <button onClick={() => onSetKO(!ko)} style={{padding:'2px 6px', background: ko ? 'rgba(220,38,38,0.7)' : 'rgba(99,102,241,0.3)', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.7rem'}}>
+            <button onClick={() => onSetKO(!ko)}
+              style={{padding:'2px 5px', background: ko ? 'rgba(220,38,38,0.65)' : (activeMon ? accentColor : 'rgba(255,255,255,0.05)'), color: ko ? '#f87171' : (activeMon ? (isMine ? '#a5b4fc' : '#fbbf24') : '#374151'), border:'none', borderRadius:3, cursor:'pointer', fontSize:'0.65rem', flexShrink:0}}>
               {ko ? '✕' : '●'}
             </button>
           </div>
-          <input type="text" placeholder="Move used" value={move} onChange={e => onSetMove(e.target.value)} style={{width:'100%', padding:'4px', background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.1)', color:'#e2e8f0', borderRadius:'4px', fontSize:'0.7rem'}} />
+          {/* Move dropdown — only from the selected Pokémon's moves */}
+          <select
+            value={move || ''}
+            onChange={e => onSetMove(e.target.value)}
+            disabled={!activeMon}
+            style={{width:'100%', padding:'2px 4px', background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.06)', color: activeMon ? '#94a3b8' : '#374151', borderRadius:3, fontSize:'0.65rem'}}
+          >
+            <option value="">— move —</option>
+            {availableMoves.map((m, i) => (
+              <option key={i} value={m}>{m}</option>
+            ))}
+          </select>
         </div>
       );
     }
