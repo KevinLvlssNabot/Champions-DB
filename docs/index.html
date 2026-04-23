@@ -1169,12 +1169,22 @@
       return found ? (found.sdSlug || found.slug) : name.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
     }
 
-    function TrackerSprite({ name, size=36 }) {
-      const slug = toTrackerSlug(name);
-      const url = `https://play.pokemonshowdown.com/sprites/ani/${slug}.gif`;
+    function TrackerSprite({ name, size=56 }) {
+      const slug = name ? toTrackerSlug(name) : null;
+      const [err, setErr] = useState(false);
+      useEffect(() => setErr(false), [name]);
       return (
-        <div style={{width: size, height: size, display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden'}}>
-          <img src={url} alt={name} loading="lazy" onError={e => { e.target.style.display='none'; }} style={{maxWidth:'100%', maxHeight:'100%', imageRendering:'pixelated'}} />
+        <div style={{width:size, height:size, display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', flexShrink:0, background:'rgba(255,255,255,0.03)', borderRadius:6, border:'1px solid rgba(255,255,255,0.06)'}}>
+          {slug && !err ? (
+            <img
+              src={`https://play.pokemonshowdown.com/sprites/ani/${slug}.gif`}
+              alt={name} loading="lazy"
+              onError={() => setErr(true)}
+              style={{maxWidth:'100%', maxHeight:'100%', objectFit:'contain', imageRendering:'pixelated'}}
+            />
+          ) : (
+            <span style={{color:'#2d3748', fontSize: size > 40 ? 20 : 12}}>?</span>
+          )}
         </div>
       );
     }
@@ -1188,7 +1198,7 @@
       // Sync nameSearch with entry.name when it changes externally (e.g. import)
       useEffect(() => { setNameSearch(''); }, [entry.name]);
 
-      // Fetch abilities once a valid ROSTER name is set
+      // Fetch abilities + full move list once a valid ROSTER name is set
       const rosterSlug = useMemo(() => {
         const found = ROSTER.find(p => p.name.toLowerCase() === (entry.name||'').toLowerCase());
         return found ? (found.sdSlug || found.slug) : null;
@@ -1196,6 +1206,10 @@
       const { data: apiData } = usePokemon(rosterSlug);
       const abilities = useMemo(() =>
         apiData ? apiData.abilities.map(a => ({ name: a.ability.name, hidden: a.is_hidden })) : [],
+      [apiData]);
+      // Full learnset for datalist suggestions
+      const allMoves = useMemo(() =>
+        apiData ? [...new Set(apiData.moves.map(m => m.move.name))].sort() : [],
       [apiData]);
 
       // Filter ROSTER suggestions while typing
@@ -1217,37 +1231,38 @@
 
       return (
         <div className="card p-2 rounded text-xs" style={{marginBottom:'8px', opacity: entry.ko ? 0.65 : 1, borderColor: entry.ko ? 'rgba(220,38,38,0.45)' : 'rgba(255,255,255,0.07)'}}>
-          {/* Header: sprite + name search + KO */}
-          <div style={{display:'flex', gap:6, alignItems:'center', marginBottom:6}}>
-            <TrackerSprite name={entry.name} size={32} />
-            <div style={{flex:1, minWidth:0, position:'relative'}}>
+          {/* Header: sprite centered, then name + KO below */}
+          <div style={{display:'flex', flexDirection:'column', alignItems:'center', gap:4, marginBottom:6}}>
+            {/* Sprite */}
+            <TrackerSprite name={entry.name} size={56} />
+
+            {/* Name tag / search input */}
+            <div style={{width:'100%', position:'relative'}}>
               {entry.name ? (
-                /* Name is set — show it as a tag with a clear button */
-                <div style={{display:'flex', alignItems:'center', gap:4, background:'#0f0f0f', border:'1px solid rgba(99,102,241,0.3)', borderRadius:4, padding:'2px 6px'}}>
-                  <span style={{flex:1, fontSize:'0.7rem', color:'#f1f5f9', fontWeight:600}}>{entry.name}</span>
-                  <button onClick={clearPokemon} style={{background:'none', border:'none', color:'#64748b', cursor:'pointer', fontSize:12, padding:0, lineHeight:1}}>×</button>
+                <div style={{display:'flex', alignItems:'center', gap:3, background:'#0f0f0f', border:'1px solid rgba(99,102,241,0.3)', borderRadius:4, padding:'2px 5px'}}>
+                  <span style={{flex:1, fontSize:'0.65rem', color:'#f1f5f9', fontWeight:600, textAlign:'center', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{entry.name}</span>
+                  <button onClick={clearPokemon} style={{background:'none', border:'none', color:'#64748b', cursor:'pointer', fontSize:11, padding:0, lineHeight:1, flexShrink:0}}>×</button>
                 </div>
               ) : (
-                /* Search mode */
                 <div>
                   <input
                     type="text"
-                    placeholder="Search Pokémon…"
+                    placeholder="Search…"
                     value={nameSearch}
                     onChange={e => { setNameSearch(e.target.value); setShowPicker(true); }}
                     onFocus={() => setShowPicker(true)}
                     onBlur={() => setTimeout(() => setShowPicker(false), 150)}
-                    style={{width:'100%', background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.1)', borderRadius:4, color:'#f1f5f9', fontSize:'0.7rem', padding:'3px 6px'}}
+                    style={{width:'100%', background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.1)', borderRadius:4, color:'#f1f5f9', fontSize:'0.65rem', padding:'2px 5px', textAlign:'center'}}
                   />
                   {showPicker && suggestions.length > 0 && (
                     <div style={{position:'absolute', top:'100%', left:0, right:0, background:'#141428', border:'1px solid rgba(99,102,241,0.35)', borderRadius:4, zIndex:200, maxHeight:120, overflowY:'auto'}}>
                       {suggestions.map(p => (
                         <div key={p.slug} onMouseDown={() => selectPokemon(p)}
-                          style={{padding:'4px 8px', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.04)', color:'#cbd5e1', fontSize:'0.7rem', display:'flex', alignItems:'center', gap:6}}
+                          style={{padding:'4px 8px', cursor:'pointer', borderBottom:'1px solid rgba(255,255,255,0.04)', color:'#cbd5e1', fontSize:'0.65rem', display:'flex', alignItems:'center', gap:5}}
                           onMouseEnter={e=>e.currentTarget.style.background='rgba(99,102,241,0.2)'}
                           onMouseLeave={e=>e.currentTarget.style.background=''}
                         >
-                          <TrackerSprite name={p.name} size={20} />
+                          <TrackerSprite name={p.name} size={18} />
                           {p.name}
                         </div>
                       ))}
@@ -1256,8 +1271,10 @@
                 </div>
               )}
             </div>
+
+            {/* KO button */}
             <button onClick={() => onUpdate({...entry, ko: !entry.ko})}
-              style={{padding:'2px 6px', background: entry.ko ? 'rgba(220,38,38,0.7)' : 'rgba(99,102,241,0.3)', color:'white', border:'none', borderRadius:4, cursor:'pointer', fontSize:'0.65rem', flexShrink:0}}>
+              style={{width:'100%', padding:'2px 0', background: entry.ko ? 'rgba(220,38,38,0.7)' : 'rgba(99,102,241,0.25)', color: entry.ko ? 'white' : '#a5b4fc', border:'none', borderRadius:3, cursor:'pointer', fontSize:'0.6rem', fontWeight:600}}>
               {entry.ko ? '✕ KO' : '● Live'}
             </button>
           </div>
@@ -1287,13 +1304,27 @@
             )}
           </div>
 
-          {/* Moves */}
+          {/* Moves — text input + native datalist dropdown from learnset */}
           <div style={{display:'flex', flexDirection:'column', gap:3, marginBottom:6}}>
-            {[0,1,2,3].map(i => (
-              <input key={i} type="text" placeholder={`Move ${i+1}…`} value={entry.moves[i]||''}
-                onChange={e => { const nm=[...entry.moves]; nm[i]=e.target.value; onUpdate({...entry, moves:nm}); }}
-                style={{width:'100%', background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.06)', borderRadius:3, color:'#94a3b8', fontSize:'0.65rem', padding:'2px 5px'}} />
-            ))}
+            {[0,1,2,3].map(i => {
+              const listId = `moves-${rosterSlug||'custom'}-${i}`;
+              return (
+                <div key={i}>
+                  <input
+                    list={listId}
+                    placeholder={`Move ${i+1}…`}
+                    value={entry.moves[i]||''}
+                    onChange={e => { const nm=[...entry.moves]; nm[i]=e.target.value; onUpdate({...entry, moves:nm}); }}
+                    style={{width:'100%', background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.06)', borderRadius:3, color:'#94a3b8', fontSize:'0.65rem', padding:'2px 5px'}}
+                  />
+                  {allMoves.length > 0 && (
+                    <datalist id={listId}>
+                      {allMoves.map(m => <option key={m} value={m.replace(/-/g,' ')} />)}
+                    </datalist>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <button onClick={() => onRemove()} className="btn-danger w-full" style={{fontSize:'0.65rem', padding:'2px'}}>Remove</button>
         </div>
@@ -1523,27 +1554,34 @@
             <button onClick={exportCSV} style={{padding:'6px 12px', background:'#059669', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.8rem'}}>Export CSV</button>
           </div>
 
-          <div style={{display:'grid', gridTemplateColumns:'200px 1fr 200px', gap:'16px'}}>
-            <div className="tracker-panel" style={{background:'#141414', border:'1px solid rgba(255,255,255,0.07)', borderRadius:'8px', padding:'12px'}}>
-              <div style={{fontSize:'0.8rem', fontWeight:'bold', color:'#a5b4fc', marginBottom:'8px'}}>My Team</div>
-              {myTeam.map((entry, idx) => (
-                <TrackerPokeSlot key={idx} entry={entry} onUpdate={e => { const t=[...myTeam]; t[idx]=e; setMyTeam(t); }} onRemove={() => { const t=[...myTeam]; t[idx]=emptyPoke(); setMyTeam(t); }} />
-              ))}
+          <div style={{display:'grid', gridTemplateColumns:'minmax(320px,380px) 1fr minmax(320px,380px)', gap:'12px'}}>
+            {/* My Team — 3×2 grid */}
+            <div className="tracker-panel" style={{background:'#141414', border:'1px solid rgba(255,255,255,0.07)', borderRadius:'8px', padding:'10px'}}>
+              <div style={{fontSize:'0.75rem', fontWeight:'bold', color:'#a5b4fc', marginBottom:'8px', textTransform:'uppercase', letterSpacing:'0.06em'}}>My Team</div>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6}}>
+                {myTeam.map((entry, idx) => (
+                  <TrackerPokeSlot key={idx} entry={entry} onUpdate={e => { const t=[...myTeam]; t[idx]=e; setMyTeam(t); }} onRemove={() => { const t=[...myTeam]; t[idx]=emptyPoke(); setMyTeam(t); }} />
+                ))}
+              </div>
             </div>
 
+            {/* Turns */}
             <div className="turns-col" style={{background:'#141414', border:'1px solid rgba(255,255,255,0.07)', borderRadius:'8px', padding:'12px'}}>
-              <div style={{fontSize:'0.8rem', fontWeight:'bold', color:'#a5b4fc', marginBottom:'8px'}}>Turns</div>
+              <div style={{fontSize:'0.75rem', fontWeight:'bold', color:'#a5b4fc', marginBottom:'8px', textTransform:'uppercase', letterSpacing:'0.06em'}}>Turns</div>
               {turns.map(t => (
                 <TurnCard key={t.id} turn={t} myTeam={myTeam} foeTeam={foeTeam} mode={mode} onUpdate={updated => { const idx=turns.findIndex(x=>x.id===t.id); if(idx!==-1){const nt=[...turns]; nt[idx]=updated; setTurns(nt);} }} onRemove={() => { if(turns.length>1) setTurns(turns.filter(x=>x.id!==t.id)); }} />
               ))}
-              <button onClick={addTurn} style={{width:'100%', padding:'8px', background:'#6366f1', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.8rem', fontWeight:'bold'}}>+ Add Turn</button>
+              <button onClick={addTurn} style={{width:'100%', padding:'8px', background:'rgba(99,102,241,0.2)', color:'#a5b4fc', border:'1px dashed rgba(99,102,241,0.4)', borderRadius:'6px', cursor:'pointer', fontSize:'0.8rem', fontWeight:'bold'}}>+ Add Turn</button>
             </div>
 
-            <div className="tracker-panel" style={{background:'#141414', border:'1px solid rgba(255,255,255,0.07)', borderRadius:'8px', padding:'12px'}}>
-              <div style={{fontSize:'0.8rem', fontWeight:'bold', color:'#a5b4fc', marginBottom:'8px'}}>Foe Team</div>
-              {foeTeam.map((entry, idx) => (
-                <TrackerPokeSlot key={idx} entry={entry} onUpdate={e => { const t=[...foeTeam]; t[idx]=e; setFoeTeam(t); }} onRemove={() => { const t=[...foeTeam]; t[idx]=emptyPoke(); setFoeTeam(t); }} />
-              ))}
+            {/* Foe Team — 3×2 grid */}
+            <div className="tracker-panel" style={{background:'#141414', border:'1px solid rgba(255,255,255,0.07)', borderRadius:'8px', padding:'10px'}}>
+              <div style={{fontSize:'0.75rem', fontWeight:'bold', color:'#f59e0b', marginBottom:'8px', textTransform:'uppercase', letterSpacing:'0.06em'}}>Foe Team</div>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6}}>
+                {foeTeam.map((entry, idx) => (
+                  <TrackerPokeSlot key={idx} entry={entry} onUpdate={e => { const t=[...foeTeam]; t[idx]=e; setFoeTeam(t); }} onRemove={() => { const t=[...foeTeam]; t[idx]=emptyPoke(); setFoeTeam(t); }} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
