@@ -586,8 +586,54 @@
       }
     };
 
-    const pokemonCache = {};
-    const moveTypeCache = {};
+    const pokemonCache   = {};
+    const moveTypeCache  = {}; // moveName → type string
+    const moveFrNameCache = {}; // moveName → French name string (populated alongside type fetch)
+    const speciesCache   = {}; // pokémon id → French name (from pokemon-species endpoint)
+    const itemFrNameCache = {}; // item sprite slug → French name
+
+    // ─── Pokémon name with lazy FR lookup ────────────────────────────────────
+    function PokemonName({ pokemon }) {
+      const lang = useContext(LangContext);
+      const [nameFr, setNameFr] = useState(speciesCache[pokemon.id] || null);
+      useEffect(() => {
+        if (lang !== 'fr') return;
+        if (speciesCache[pokemon.id] !== undefined) { setNameFr(speciesCache[pokemon.id]); return; }
+        speciesCache[pokemon.id] = null; // mark in-flight
+        fetch(`https://pokeapi.co/api/v2/pokemon-species/${pokemon.id}`)
+          .then(r => r.json())
+          .then(d => {
+            const fn = d.names.find(n => n.language.name === 'fr')?.name || pokemon.name;
+            speciesCache[pokemon.id] = fn;
+            setNameFr(fn);
+          })
+          .catch(() => { speciesCache[pokemon.id] = pokemon.name; setNameFr(pokemon.name); });
+      }, [pokemon.id, lang]);
+      if (lang !== 'fr') return <>{pokemon.name}</>;
+      return <>{nameFr || pokemon.name}</>;
+    }
+
+    // ─── Item name with lazy FR lookup ───────────────────────────────────────
+    function FrItemName({ item }) {
+      const lang = useContext(LangContext);
+      const slug = item.itemSprite;
+      const [nameFr, setNameFr] = useState(itemFrNameCache[slug] || null);
+      useEffect(() => {
+        if (lang !== 'fr' || !slug || slug === 'null') return;
+        if (itemFrNameCache[slug] !== undefined) { setNameFr(itemFrNameCache[slug]); return; }
+        itemFrNameCache[slug] = null;
+        fetch(`https://pokeapi.co/api/v2/item/${slug}`)
+          .then(r => r.json())
+          .then(d => {
+            const fn = d.names.find(n => n.language.name === 'fr')?.name || item.name;
+            itemFrNameCache[slug] = fn;
+            setNameFr(fn);
+          })
+          .catch(() => { itemFrNameCache[slug] = item.name; setNameFr(item.name); });
+      }, [slug, lang]);
+      if (lang !== 'fr') return <>{item.name}</>;
+      return <>{nameFr || item.name}</>;
+    }
 
     const ABILITY_IMMUNITIES = {
       'levitate': ['ground'], 'flash-fire': ['fire'], 'water-absorb': ['water'],
@@ -673,7 +719,7 @@
               <img src={getSpriteUrl(pokemon)} alt={pokemon.name} loading="lazy" />
             </div>
           </div>
-          <div className="text-sm font-bold text-white mb-1 text-center">{pokemon.name}</div>
+          <div className="text-sm font-bold text-white mb-1 text-center"><PokemonName pokemon={pokemon} /></div>
           <div className="flex gap-1 mb-2 justify-center flex-wrap">
             {pokemon.types.map(t => <TypeBadge key={t} type={t} />)}
           </div>
@@ -783,7 +829,7 @@
                 <div className="sprite-box mx-auto mb-1">
                   <img src={getSpriteUrl(pokemon)} alt={pokemon.name} loading="lazy" />
                 </div>
-                <div className="text-xs font-bold mb-1 leading-tight">{pokemon.name}</div>
+                <div className="text-xs font-bold mb-1 leading-tight"><PokemonName pokemon={pokemon} /></div>
                 <div className="flex gap-1 justify-center flex-wrap mb-1.5">
                   {pokemon.types.map(t => <TypeBadge key={t} type={t} />)}
                 </div>
@@ -806,6 +852,7 @@
 
     function TeamSlot({ mon, idx, onRemove, onSelect, item, onSetItem, moves, onSetMoves, ability, onSetAbility }) {
       const t = useT();
+      const lang = useContext(LangContext);
       const { data: apiData } = usePokemon(mon ? mon.slug : null);
       const [pokeSearch, setPokeSearch] = useState('');
       const [moveTypes, setMoveTypes] = useState([null,null,null,null]);
@@ -822,7 +869,7 @@
         moves.forEach((moveName, i) => {
           if (!moveName) { setMoveTypes(prev => { const n=[...prev]; n[i]=null; return n; }); return; }
           if (moveTypeCache[moveName]) { setMoveTypes(prev => { const n=[...prev]; n[i]=moveTypeCache[moveName]; return n; }); return; }
-          fetch(`https://pokeapi.co/api/v2/move/${moveName}`).then(r=>r.json()).then(d=>{moveTypeCache[moveName]=d.type.name;setTick(t=>t+1);}).catch(()=>{});
+          fetch(`https://pokeapi.co/api/v2/move/${moveName}`).then(r=>r.json()).then(d=>{moveTypeCache[moveName]=d.type.name;moveFrNameCache[moveName]=d.names.find(n=>n.language.name==='fr')?.name||null;setTick(t=>t+1);}).catch(()=>{});
         });
       }, [moves]);
       useEffect(() => { setMoveTypes(moves.map(m => m ? (moveTypeCache[m]||null) : null)); }, [tick, moves]);
@@ -840,7 +887,7 @@
           {mon ? (
             <>
               <div className="sprite-box mx-auto mb-1"><img src={getSpriteUrl(mon)} alt={mon.name} loading="lazy" /></div>
-              <div className="font-bold text-xs mb-1">{mon.name}</div>
+              <div className="font-bold text-xs mb-1"><PokemonName pokemon={mon} /></div>
               <div className="flex gap-1 justify-center mb-2 flex-wrap">{mon.types.map(t => <TypeBadge key={t} type={t} />)}</div>
               {abilities.length > 0 && (
                 <div className="mb-2">
@@ -868,7 +915,10 @@
                   <div key={mi} className="flex items-center gap-1">
                     <select value={moves[mi]||""} onChange={e=>{const nm=[...moves];nm[mi]=e.target.value;onSetMoves(nm);}} className="move-select flex-1">
                       <option value="">{t('tb.movePh')} {mi+1}…</option>
-                      {allMoves.map(m=><option key={m} value={m}>{m.replace(/-/g,' ')}</option>)}
+                      {allMoves.map(m=>{
+                        const display = (lang==='fr' && moveFrNameCache[m]) ? moveFrNameCache[m] : m.replace(/-/g,' ');
+                        return <option key={m} value={m}>{display}</option>;
+                      })}
                     </select>
                     {moveTypes[mi] && <TypeBadge type={moveTypes[mi]}/>}
                   </div>
@@ -1123,7 +1173,7 @@
                   <div className="sprite-box mx-auto mb-1">
                     <img src={getSpriteUrl(pokemon)} alt={pokemon.name} loading="lazy" />
                   </div>
-                  <div className="text-xs font-bold mb-1">{pokemon.name}</div>
+                  <div className="text-xs font-bold mb-1"><PokemonName pokemon={pokemon} /></div>
                   {filledTeam.length > 0 && (
                     <div className="text-xs mb-1" style={{color:'#a5b4fc'}}>Score {score}</div>
                   )}
@@ -1185,8 +1235,8 @@
                     />
                   ) : <span className="text-xl">✨</span>}
                 </div>
-                <div className="text-xs font-bold mb-1">{item.name}</div>
-                <div className="text-xs bg-gray-800 px-2 py-0.5 rounded inline-block mb-1" style={{color:'#a5b4fc'}}>{item.category}</div>
+                <div className="text-xs font-bold mb-1"><FrItemName item={item} /></div>
+                <div className="text-xs bg-gray-800 px-2 py-0.5 rounded inline-block mb-1" style={{color:'#a5b4fc'}}>{t('cat.' + item.category) || item.category}</div>
                 <div className="text-xs" style={{color:'#94a3b8'}}>{item.effect}</div>
               </div>
             ))}
@@ -1222,7 +1272,7 @@
                   <div className="flex justify-between items-start mb-1">
                     <div>
                       <h4 className="text-sm font-bold text-white">{synergy.name}</h4>
-                      <div className="text-xs" style={{color:'#6366f1'}}>{synergy.category}</div>
+                      <div className="text-xs" style={{color:'#6366f1'}}>{t('syn.' + synergy.category) || synergy.category}</div>
                     </div>
                     {synergy.usage && (
                       <div className="text-sm font-semibold" style={{color:'#a5b4fc'}}>{synergy.usage}%</div>
@@ -1293,6 +1343,7 @@
 
     function TrackerPokeSlot({ entry, onUpdate, onRemove }) {
       const t = useT();
+      const lang = useContext(LangContext);
       // Search state for the Pokémon name picker (like TeamSlot)
       const [nameSearch, setNameSearch] = useState('');
       const [showPicker, setShowPicker] = useState(false);
@@ -1422,7 +1473,10 @@
                   />
                   {allMoves.length > 0 && (
                     <datalist id={listId}>
-                      {allMoves.map(m => <option key={m} value={m.replace(/-/g,' ')} />)}
+                      {allMoves.map(m => {
+                        const display = (lang==='fr' && moveFrNameCache[m]) ? moveFrNameCache[m] : m.replace(/-/g,' ');
+                        return <option key={m} value={display} />;
+                      })}
                     </datalist>
                   )}
                 </div>
