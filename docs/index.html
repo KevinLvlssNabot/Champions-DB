@@ -167,7 +167,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useCallback, useMemo, useRef } = React;
+    const { useState, useEffect, useCallback, useMemo, useRef, useContext, createContext } = React;
 
     const ROSTER = [
       {name:"Abomasnow",slug:"abomasnow",id:460,types:["grass","ice"]},
@@ -490,6 +490,102 @@
       {id:12,name:"Froslass Blizzard Setup",category:"Weather",usage:9.73,blurb:"Mega Froslass Snow Warning Aurora Veil + Blizzard, 9.73% usage.",cores:["Froslass"],partners:["Pelipper","Rotom (Wash)"]},
     ];
 
+    // ─── i18n ──────────────────────────────────────────────────────────────────
+    const LangContext = createContext('en');
+    function useT() {
+      const lang = useContext(LangContext);
+      return (key) => (T[lang] && T[lang][key]) || (T['en'] && T['en'][key]) || key;
+    }
+
+    const T = {
+      en: {
+        // Header / nav
+        'reg': 'Regulation M-A · April – June 2026',
+        'tab.roster': 'Roster', 'tab.teambuilder': 'Teambuilder', 'tab.items': 'Items',
+        'tab.synergies': 'Synergies', 'tab.tracker': 'Turn Tracker',
+        // Roster
+        'roster.search': 'Search Pokémon…', 'roster.add': '+ Add',
+        // Teambuilder
+        'tb.team': 'Your Team', 'tb.slot': 'Slot', 'tb.talent': '— Talent —',
+        'tb.noItem': '— No Item —', 'tb.movePh': 'Move', 'tb.remove': 'Remove',
+        'tb.empty': '— Empty —', 'tb.searchPoke': 'Search Pokémon…',
+        'tb.defensive': 'Defensive Coverage', 'tb.offensive': 'Offensive Coverage',
+        'tb.suggested': 'Suggested Pokémon',
+        'tb.defHint': '± score: immune +2 · ×0.25 +2 · ×0.5 +1 · ×2 −1 · ×4 −2',
+        'tb.offHint': 'Best move vs each defending type · ± score: 4× +2 · 2× +1 · ½ −1',
+        'tb.suggHint': 'Score relative to team · Covers hole: immune +4 · ½ +2 · Deepens hole: ×2 −2 · ×4 −4',
+        'tb.atk': 'Atk', 'tb.def': 'Def', 'tb.add': '+ Add',
+        // Items
+        'items.search': 'Search items…', 'items.all': 'All',
+        'cat.Berry':'Berry','cat.Choice':'Choice','cat.Damage':'Damage','cat.Bulk':'Bulk',
+        'cat.Survival':'Survival','cat.Stat Boost':'Stat Boost','cat.Mega Stone':'Mega Stone',
+        'cat.Recovery':'Recovery','cat.Reactive':'Reactive','cat.Status':'Status','cat.Utility':'Utility',
+        // Synergies
+        'syn.all':'All','syn.core':'Core:','syn.partners':'Partners:',
+        'syn.Weather':'Weather','syn.Trick Room':'Trick Room','syn.Setup':'Setup',
+        'syn.Offensive':'Offensive','syn.Support':'Support',
+        // Tooltip
+        'tip.loading':'Loading…','tip.immune':'Immune:','tip.weak':'Weak to:','tip.resists':'Resists:',
+        // Turn Tracker
+        'tt.myTeam':'My Team','tt.foeTeam':'Foe Team','tt.turns':'Turns',
+        'tt.import':'⬆ Import Team','tt.resetTurns':'↺ Reset turns','tt.resetAll':'✕ Reset all',
+        'tt.csv':'⬇ Export CSV','tt.doubles':'Doubles','tt.singles':'Singles',
+        'tt.myActive':'My Active','tt.foeActive':'Foe Active',
+        'tt.search':'Search…','tt.abilityPh':'Ability…','tt.movePh':'Move',
+        'tt.remove':'Remove','tt.live':'● Live','tt.ko':'✕ KO',
+        'tt.turn':'Turn','tt.weather':'Weather','tt.field':'Field','tt.screens':'Screens',
+        'tt.sun':'☀ Sun','tt.rain':'🌧 Rain','tt.sand':'🏜 Sand','tt.snow':'❄ Snow',
+        'tt.tr':'⟳ Trick Room','tt.misty':'🌸 Misty','tt.psychic':'🔮 Psychic',
+        'tt.grassy':'🌿 Grassy','tt.electric':'⚡ Electric',
+        'tt.ls':'🛡 Light Screen','tt.reflect':'🔵 Reflect','tt.av':'✦ Aurora Veil',
+        'tt.slot':'Slot','tt.selectPoke':'— select —','tt.selectMove':'— move —',
+        'tt.addTurn':'+ Add Turn',
+      },
+      fr: {
+        // Header / nav
+        'reg': 'Régulation M-A · Avril – Juin 2026',
+        'tab.roster': 'Effectif', 'tab.teambuilder': 'Équipe', 'tab.items': 'Objets',
+        'tab.synergies': 'Synergies', 'tab.tracker': 'Suivi Combat',
+        // Roster
+        'roster.search': 'Rechercher un Pokémon…', 'roster.add': '+ Ajouter',
+        // Teambuilder
+        'tb.team': 'Mon Équipe', 'tb.slot': 'Slot', 'tb.talent': '— Talent —',
+        'tb.noItem': '— Aucun Objet —', 'tb.movePh': 'Attaque', 'tb.remove': 'Retirer',
+        'tb.empty': '— Vide —', 'tb.searchPoke': 'Rechercher un Pokémon…',
+        'tb.defensive': 'Couverture Défensive', 'tb.offensive': 'Couverture Offensive',
+        'tb.suggested': 'Pokémon Suggérés',
+        'tb.defHint': 'Score ± : immun +2 · ×0.25 +2 · ×0.5 +1 · ×2 −1 · ×4 −2',
+        'tb.offHint': 'Meilleure attaque vs chaque type · Score ± : 4× +2 · 2× +1 · ½ −1',
+        'tb.suggHint': 'Score relatif à l\'équipe · Couvre une faille : immun +4 · ½ +2 · Aggrave : ×2 −2 · ×4 −4',
+        'tb.atk': 'Att.', 'tb.def': 'Déf.', 'tb.add': '+ Ajouter',
+        // Items
+        'items.search': 'Rechercher un objet…', 'items.all': 'Tous',
+        'cat.Berry':'Baie','cat.Choice':'Choix','cat.Damage':'Dégâts','cat.Bulk':'Solidité',
+        'cat.Survival':'Survie','cat.Stat Boost':'Stats+','cat.Mega Stone':'Pierre Méga',
+        'cat.Recovery':'Récup.','cat.Reactive':'Réactif','cat.Status':'Statut','cat.Utility':'Utilitaire',
+        // Synergies
+        'syn.all':'Tous','syn.core':'Noyau :','syn.partners':'Partenaires :',
+        'syn.Weather':'Météo','syn.Trick Room':'Salle Insolite','syn.Setup':'Mise en place',
+        'syn.Offensive':'Offensif','syn.Support':'Soutien',
+        // Tooltip
+        'tip.loading':'Chargement…','tip.immune':'Immunité :','tip.weak':'Faiblesse :','tip.resists':'Résistance :',
+        // Turn Tracker
+        'tt.myTeam':'Mon Équipe','tt.foeTeam':'Équipe Adverse','tt.turns':'Tours',
+        'tt.import':'⬆ Importer Équipe','tt.resetTurns':'↺ Reset tours','tt.resetAll':'✕ Reset total',
+        'tt.csv':'⬇ Exporter CSV','tt.doubles':'Doubles','tt.singles':'Simples',
+        'tt.myActive':'Mes Actifs','tt.foeActive':'Actifs Adverses',
+        'tt.search':'Rechercher…','tt.abilityPh':'Talent…','tt.movePh':'Attaque',
+        'tt.remove':'Retirer','tt.live':'● Vivant','tt.ko':'✕ KO',
+        'tt.turn':'Tour','tt.weather':'Météo','tt.field':'Terrain','tt.screens':'Écrans',
+        'tt.sun':'☀ Soleil','tt.rain':'🌧 Pluie','tt.sand':'🏜 Sable','tt.snow':'❄ Grêle',
+        'tt.tr':'⟳ Salle Insolite','tt.misty':'🌸 Champ Féerique','tt.psychic':'🔮 Champ Psychique',
+        'tt.grassy':'🌿 Champ Herbeux','tt.electric':'⚡ Champ Électrique',
+        'tt.ls':'🛡 Voile Lumière','tt.reflect':'🔵 Mur Lumière','tt.av':'✦ Double Voile',
+        'tt.slot':'Slot','tt.selectPoke':'— choisir —','tt.selectMove':'— attaque —',
+        'tt.addTurn':'+ Tour suivant',
+      }
+    };
+
     const pokemonCache = {};
     const moveTypeCache = {};
 
@@ -549,6 +645,7 @@
     }
 
     function PokemonTooltip({ pokemon, mousePos }) {
+      const t = useT();
       const { data, loading } = usePokemon(pokemon.slug);
       const vw = window.innerWidth;
       const vh = window.innerHeight;
@@ -559,7 +656,7 @@
       if (loading && !data) {
         return (
           <div className="tooltip" style={{ left, top }}>
-            <div className="text-xs text-gray-400">Loading…</div>
+            <div className="text-xs text-gray-400">{t('tip.loading')}</div>
           </div>
         );
       }
@@ -594,13 +691,13 @@
           </div>
           {immunities.length > 0 && (
             <div className="mb-1">
-              <div className="text-xs font-semibold mb-0.5" style={{color:'#60a5fa'}}>Immune:</div>
+              <div className="text-xs font-semibold mb-0.5" style={{color:'#60a5fa'}}>{t('tip.immune')}</div>
               <div className="flex flex-wrap gap-0.5">{immunities.map(t => <TypeBadge key={t} type={t} />)}</div>
             </div>
           )}
           {weaknesses.length > 0 && (
             <div className="mb-1">
-              <div className="text-xs font-semibold mb-0.5" style={{color:'#f87171'}}>Weak to:</div>
+              <div className="text-xs font-semibold mb-0.5" style={{color:'#f87171'}}>{t('tip.weak')}</div>
               <div className="flex flex-wrap gap-0.5">
                 {weaknesses.sort((a,b)=>b.mult-a.mult).map(w => (
                   <span key={w.type} className="inline-flex items-center gap-0.5">
@@ -613,7 +710,7 @@
           )}
           {resistances.length > 0 && (
             <div>
-              <div className="text-xs font-semibold mb-0.5" style={{color:'#4ade80'}}>Resists:</div>
+              <div className="text-xs font-semibold mb-0.5" style={{color:'#4ade80'}}>{t('tip.resists')}</div>
               <div className="flex flex-wrap gap-0.5">
                 {resistances.map(r => (
                   <span key={r.type} className="inline-flex items-center gap-0.5">
@@ -629,6 +726,7 @@
     }
 
     function RosterTab({ team, onAddToTeam, onHoverPokemon, tooltipData }) {
+      const t = useT();
       const [search, setSearch] = useState("");
       const [typeFilter, setTypeFilter] = useState([]);
 
@@ -649,7 +747,7 @@
           <div className="mb-3">
             <input
               type="text"
-              placeholder="Search Pokémon…"
+              placeholder={t('roster.search')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full px-4 py-2 bg-gray-900 text-white rounded border border-gray-700 focus:outline-none focus:border-indigo-500 text-sm"
@@ -696,7 +794,7 @@
                   onClick={e => { e.stopPropagation(); onAddToTeam(pokemon); }}
                   className="btn-primary w-full"
                 >
-                  + Add
+                  {t('roster.add')}
                 </button>
               </div>
             ))}
@@ -707,6 +805,7 @@
     }
 
     function TeamSlot({ mon, idx, onRemove, onSelect, item, onSetItem, moves, onSetMoves, ability, onSetAbility }) {
+      const t = useT();
       const { data: apiData } = usePokemon(mon ? mon.slug : null);
       const [pokeSearch, setPokeSearch] = useState('');
       const [moveTypes, setMoveTypes] = useState([null,null,null,null]);
@@ -737,7 +836,7 @@
 
       return (
         <div className="card p-2 rounded text-center" style={{minWidth:0}}>
-          <div className="text-xs font-semibold mb-1" style={{color:'#64748b'}}>Slot {idx+1}</div>
+          <div className="text-xs font-semibold mb-1" style={{color:'#64748b'}}>{t('tb.slot')} {idx+1}</div>
           {mon ? (
             <>
               <div className="sprite-box mx-auto mb-1"><img src={getSpriteUrl(mon)} alt={mon.name} loading="lazy" /></div>
@@ -746,7 +845,7 @@
               {abilities.length > 0 && (
                 <div className="mb-2">
                   <select value={ability||''} onChange={e=>onSetAbility(e.target.value)} className="w-full px-1 py-1 bg-gray-900 text-white text-xs rounded border border-gray-700 mb-1">
-                    <option value="">— Talent —</option>
+                    <option value="">{t('tb.talent')}</option>
                     {abilities.map(a => <option key={a.name} value={a.name}>{a.hidden?'◇ ':'⚡ '}{a.name.replace(/-/g,' ')}</option>)}
                   </select>
                   {ability && (() => {
@@ -761,26 +860,26 @@
                 </div>
               )}
               <select value={item||""} onChange={e=>onSetItem(e.target.value)} className="w-full px-1 py-1 bg-gray-900 text-white text-xs rounded border border-gray-700 mb-2">
-                <option value="">— No Item —</option>
+                <option value="">{t('tb.noItem')}</option>
                 {sortedItems.map(it=><option key={it.name} value={it.name}>{it.name}</option>)}
               </select>
               <div className="space-y-1 mb-2">
                 {[0,1,2,3].map(mi=>(
                   <div key={mi} className="flex items-center gap-1">
                     <select value={moves[mi]||""} onChange={e=>{const nm=[...moves];nm[mi]=e.target.value;onSetMoves(nm);}} className="move-select flex-1">
-                      <option value="">Move {mi+1}…</option>
+                      <option value="">{t('tb.movePh')} {mi+1}…</option>
                       {allMoves.map(m=><option key={m} value={m}>{m.replace(/-/g,' ')}</option>)}
                     </select>
                     {moveTypes[mi] && <TypeBadge type={moveTypes[mi]}/>}
                   </div>
                 ))}
               </div>
-              <button onClick={onRemove} className="btn-danger w-full">Remove</button>
+              <button onClick={onRemove} className="btn-danger w-full">{t('tb.remove')}</button>
             </>
           ) : (
             <div>
-              <div style={{color:'#374151',fontSize:'0.7rem'}} className="mb-2">— Empty —</div>
-              <input type="text" placeholder="Search Pokémon…" value={pokeSearch} onChange={e=>setPokeSearch(e.target.value)} className="w-full px-2 py-1 bg-gray-900 text-white text-xs rounded border border-gray-700 mb-1 focus:outline-none focus:border-indigo-500"/>
+              <div style={{color:'#374151',fontSize:'0.7rem'}} className="mb-2">{t('tb.empty')}</div>
+              <input type="text" placeholder={t('tb.searchPoke')} value={pokeSearch} onChange={e=>setPokeSearch(e.target.value)} className="w-full px-2 py-1 bg-gray-900 text-white text-xs rounded border border-gray-700 mb-1 focus:outline-none focus:border-indigo-500"/>
               {filteredRoster.length>0&&<div className="poke-picker mb-1">
                 {filteredRoster.map(p=><div key={p.slug} className="px-2 py-1 text-xs cursor-pointer hover:bg-indigo-800 text-left" style={{color:'#cbd5e1'}} onClick={()=>{onSelect(p);setPokeSearch('');}}>{p.name}</div>)}
               </div>}
@@ -791,6 +890,7 @@
     }
 
     function TeambuilderTab({ team, setTeam, onHoverPokemon, tooltipData, moveSelectors, setMoveSelectors, abilitySelectors, setAbilitySelectors }) {
+      const t = useT();
       const [itemSelectors, setItemSelectors] = useState(Array(6).fill(null));
 
       const removeFromTeam = i => {
@@ -909,7 +1009,7 @@
         <div className="scroll-h flex-1 min-w-0">
           <table className="text-xs border-collapse" style={{minWidth:'max-content'}}>
             <thead><tr>
-              <th className="p-1.5 text-left sticky left-0 z-10" style={{background:'#0a0a0a',minWidth:'68px'}}>Atk</th>
+              <th className="p-1.5 text-left sticky left-0 z-10" style={{background:'#0a0a0a',minWidth:'68px'}}>{t('tb.atk')}</th>
               {team.map((mon,i)=><th key={i} className="p-1.5 text-center border-l" style={{background:'#0a0a0a',borderColor:'rgba(255,255,255,0.06)',minWidth:'52px'}}><div className="truncate text-xs" title={mon?mon.name:'—'}>{mon?mon.name.split(' ')[0]:'—'}</div></th>)}
               <th className="p-1.5 text-center border-l" style={{background:'#0a0a0a',borderColor:'rgba(255,255,255,0.06)',minWidth:'36px',color:'#a5b4fc'}}>±</th>
             </tr></thead>
@@ -938,7 +1038,7 @@
         <div className="scroll-h flex-1 min-w-0">
           <table className="text-xs border-collapse" style={{minWidth:'max-content'}}>
             <thead><tr>
-              <th className="p-1.5 text-left sticky left-0 z-10" style={{background:'#0a0a0a',minWidth:'68px'}}>Def</th>
+              <th className="p-1.5 text-left sticky left-0 z-10" style={{background:'#0a0a0a',minWidth:'68px'}}>{t('tb.def')}</th>
               {activeCovMons.map(({mon},i)=><th key={i} className="p-1.5 text-center border-l" style={{background:'#0a0a0a',borderColor:'rgba(255,255,255,0.06)',minWidth:'52px'}}><div className="truncate text-xs">{mon.name.split(' ')[0]}</div></th>)}
               <th className="p-1.5 text-center border-l" style={{background:'#0a0a0a',borderColor:'rgba(255,255,255,0.06)',minWidth:'36px',color:'#a5b4fc'}}>±</th>
             </tr></thead>
@@ -958,7 +1058,7 @@
       return (
         <div className="space-y-8">
           <div>
-            <h3 className="text-lg font-bold mb-3" style={{color:'#a5b4fc'}}>Your Team</h3>
+            <h3 className="text-lg font-bold mb-3" style={{color:'#a5b4fc'}}>{t('tb.team')}</h3>
             <div className="grid gap-3" style={{gridTemplateColumns:'repeat(auto-fit,minmax(155px,1fr))'}}>
               {team.map((mon, idx) => (
                 <TeamSlot
@@ -979,8 +1079,8 @@
 
           {filledTeam.length > 0 && (
             <div>
-              <h3 className="text-lg font-bold mb-1" style={{color:'#a5b4fc'}}>Defensive Coverage</h3>
-              <p className="text-xs mb-3" style={{color:'#64748b'}}>± score: immune +2 · ×0.25 +2 · ×0.5 +1 · ×2 −1 · ×4 −2</p>
+              <h3 className="text-lg font-bold mb-1" style={{color:'#a5b4fc'}}>{t('tb.defensive')}</h3>
+              <p className="text-xs mb-3" style={{color:'#64748b'}}>{t('tb.defHint')}</p>
               <div className="flex gap-4 flex-wrap">
                 {defTableHalf(typeMatchups.slice(0,9))}
                 {defTableHalf(typeMatchups.slice(9))}
@@ -998,8 +1098,8 @@
 
           {hasCoverage && (
             <div>
-              <h3 className="text-lg font-bold mb-1" style={{color:'#a5b4fc'}}>Offensive Coverage</h3>
-              <p className="text-xs mb-3" style={{color:'#64748b'}}>Best move vs each defending type · ± score: 4× +2 · 2× +1 · ½ −1</p>
+              <h3 className="text-lg font-bold mb-1" style={{color:'#a5b4fc'}}>{t('tb.offensive')}</h3>
+              <p className="text-xs mb-3" style={{color:'#64748b'}}>{t('tb.offHint')}</p>
               <div className="flex gap-4 flex-wrap">
                 {covTableHalf(coverageRows.slice(0,9))}
                 {covTableHalf(coverageRows.slice(9))}
@@ -1008,9 +1108,9 @@
           )}
 
           <div>
-            <h3 className="text-lg font-bold mb-1" style={{color:'#a5b4fc'}}>Suggested Pokémon</h3>
+            <h3 className="text-lg font-bold mb-1" style={{color:'#a5b4fc'}}>{t('tb.suggested')}</h3>
             {filledTeam.length > 0 && (
-              <p className="text-xs mb-3" style={{color:'#64748b'}}>Score relatif à l'équipe · Couvre une faille: immune +4 · ½ +2 · Aggrave une faille: ×2 −2 · ×4 −4</p>
+              <p className="text-xs mb-3" style={{color:'#64748b'}}>{t('tb.suggHint')}</p>
             )}
             <div className="grid gap-2" style={{gridTemplateColumns:'repeat(auto-fill,minmax(110px,1fr))'}}>
               {suggestions.map(({ pokemon, score }) => (
@@ -1045,6 +1145,7 @@
     }
 
     function ItemsTab() {
+      const t = useT();
       const [search, setSearch] = useState("");
       const [cat, setCat] = useState("All");
       const categories = ["All","Berry","Choice","Damage","Bulk","Survival","Stat Boost","Mega Stone","Recovery","Reactive","Status","Utility"];
@@ -1059,7 +1160,7 @@
         <div className="space-y-4">
           <input
             type="text"
-            placeholder="Search items…"
+            placeholder={t('items.search')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full px-4 py-2 bg-gray-900 text-white rounded border border-gray-700 focus:outline-none focus:border-indigo-500 text-sm"
@@ -1068,7 +1169,7 @@
             {categories.map(c => (
               <button key={c} onClick={() => setCat(c)}
                 className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${cat===c ? 'filter-active' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>
-                {c}
+                {c === 'All' ? t('items.all') : (t('cat.' + c) || c)}
               </button>
             ))}
           </div>
@@ -1095,6 +1196,7 @@
     }
 
     function SynergiesTab({ onHoverPokemon, tooltipData }) {
+      const t = useT();
       const [cat, setCat] = useState("All");
       const categories = ["All","Weather","Trick Room","Setup","Offensive","Support"];
       const filtered = useMemo(() =>
@@ -1107,7 +1209,7 @@
             {categories.map(c => (
               <button key={c} onClick={() => setCat(c)}
                 className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${cat===c ? 'filter-active' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>
-                {c}
+                {c === 'All' ? t('syn.all') : (t('syn.' + c) || c)}
               </button>
             ))}
           </div>
@@ -1128,7 +1230,7 @@
                   </div>
                   <p className="text-xs mb-3" style={{color:'#94a3b8'}}>{synergy.blurb}</p>
                   <div className="mb-2">
-                    <div className="text-xs font-semibold mb-1" style={{color:'#64748b'}}>Core:</div>
+                    <div className="text-xs font-semibold mb-1" style={{color:'#64748b'}}>{t('syn.core')}</div>
                     <div className="flex gap-2 flex-wrap">
                       {coreMons.map(p => (
                         <div key={p.slug} className="cursor-pointer hover:opacity-80"
@@ -1142,7 +1244,7 @@
                   </div>
                   {partnerMons.length > 0 && (
                     <div>
-                      <div className="text-xs font-semibold mb-1" style={{color:'#64748b'}}>Partners:</div>
+                      <div className="text-xs font-semibold mb-1" style={{color:'#64748b'}}>{t('syn.partners')}</div>
                       <div className="flex gap-2 flex-wrap">
                         {partnerMons.map(p => (
                           <div key={p.slug} className="cursor-pointer hover:opacity-80"
@@ -1190,6 +1292,7 @@
     }
 
     function TrackerPokeSlot({ entry, onUpdate, onRemove }) {
+      const t = useT();
       // Search state for the Pokémon name picker (like TeamSlot)
       const [nameSearch, setNameSearch] = useState('');
       const [showPicker, setShowPicker] = useState(false);
@@ -1247,7 +1350,7 @@
                 <div>
                   <input
                     type="text"
-                    placeholder="Search…"
+                    placeholder={t('tt.search')}
                     value={nameSearch}
                     onChange={e => { setNameSearch(e.target.value); setShowPicker(true); }}
                     onFocus={() => setShowPicker(true)}
@@ -1275,7 +1378,7 @@
             {/* KO button */}
             <button onClick={() => onUpdate({...entry, ko: !entry.ko})}
               style={{width:'100%', padding:'2px 0', background: entry.ko ? 'rgba(220,38,38,0.7)' : 'rgba(99,102,241,0.25)', color: entry.ko ? 'white' : '#a5b4fc', border:'none', borderRadius:3, cursor:'pointer', fontSize:'0.6rem', fontWeight:600}}>
-              {entry.ko ? '✕ KO' : '● Live'}
+              {entry.ko ? t('tt.ko') : t('tt.live')}
             </button>
           </div>
 
@@ -1283,7 +1386,7 @@
           <div style={{position:'relative', marginBottom:4}}>
             <input
               type="text"
-              placeholder="Ability…"
+              placeholder={t('tt.abilityPh')}
               value={entry.ability}
               onChange={e => onUpdate({...entry, ability: e.target.value})}
               onFocus={() => setAbilityDropdown(true)}
@@ -1312,7 +1415,7 @@
                 <div key={i}>
                   <input
                     list={listId}
-                    placeholder={`Move ${i+1}…`}
+                    placeholder={`${t('tt.movePh')} ${i+1}…`}
                     value={entry.moves[i]||''}
                     onChange={e => { const nm=[...entry.moves]; nm[i]=e.target.value; onUpdate({...entry, moves:nm}); }}
                     style={{width:'100%', background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.06)', borderRadius:3, color:'#94a3b8', fontSize:'0.65rem', padding:'2px 5px'}}
@@ -1326,12 +1429,13 @@
               );
             })}
           </div>
-          <button onClick={() => onRemove()} className="btn-danger w-full" style={{fontSize:'0.65rem', padding:'2px'}}>Remove</button>
+          <button onClick={() => onRemove()} className="btn-danger w-full" style={{fontSize:'0.65rem', padding:'2px'}}>{t('tt.remove')}</button>
         </div>
       );
     }
 
     function ActiveSlot({ slotIdx, team, activeIdx, move, ko, onSetActive, onSetMove, onSetKO, side }) {
+      const t = useT();
       // Only members with a name are selectable
       const namedMembers = useMemo(() =>
         team.map((p, i) => ({ p, i })).filter(({ p }) => p && p.name),
@@ -1352,7 +1456,7 @@
 
       return (
         <div style={{marginBottom:8, padding:6, background:'#0f0f0f', borderRadius:4, border:`1px solid ${accentBorder}`}}>
-          <div style={{fontSize:'0.65rem', color:'#64748b', marginBottom:3}}>Slot {slotIdx+1}</div>
+          <div style={{fontSize:'0.65rem', color:'#64748b', marginBottom:3}}>{t('tt.slot')} {slotIdx+1}</div>
           {/* Pokémon selector row */}
           <div style={{display:'flex', gap:5, alignItems:'center', marginBottom:4}}>
             <TrackerSprite name={activeMon?.name || ''} size={26} />
@@ -1365,7 +1469,7 @@
               }}
               style={{flex:1, padding:'3px 4px', background:'#1a1a1a', border:`1px solid ${accentColor}`, color: selectVal ? '#f1f5f9' : '#4b5563', borderRadius:4, fontSize:'0.65rem'}}
             >
-              <option value="">— select —</option>
+              <option value="">{t('tt.selectPoke')}</option>
               {namedMembers.map(({ p, i }) => (
                 <option key={i} value={i}>{p.name}</option>
               ))}
@@ -1382,7 +1486,7 @@
             disabled={!activeMon}
             style={{width:'100%', padding:'2px 4px', background:'#0f0f0f', border:'1px solid rgba(255,255,255,0.06)', color: activeMon ? '#94a3b8' : '#374151', borderRadius:3, fontSize:'0.65rem'}}
           >
-            <option value="">— move —</option>
+            <option value="">{t('tt.selectMove')}</option>
             {availableMoves.map((m, i) => (
               <option key={i} value={m}>{m}</option>
             ))}
@@ -1392,52 +1496,58 @@
     }
 
     function TurnCard({ turn, myTeam, foeTeam, mode, onUpdate, onRemove }) {
+      const t = useT();
       const numSlots = mode === 'doubles' ? 2 : 1;
 
       return (
         <div className="card p-3 rounded" style={{marginBottom:'16px'}}>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'12px'}}>
-            <span style={{fontSize:'0.8rem', fontWeight:'bold'}}>Turn {turn.id}</span>
+            <span style={{fontSize:'0.8rem', fontWeight:'bold'}}>{t('tt.turn')} {turn.id}</span>
             <button onClick={() => onRemove()} className="btn-danger" style={{padding:'2px 6px'}}>×</button>
           </div>
 
           <div style={{display:'grid', gridTemplateColumns:'1fr 20px 1fr', gap:'12px', marginBottom:'12px'}}>
             <div style={{background:'#0f0f0f', padding:'8px', borderRadius:'4px'}}>
-              <div style={{fontSize:'0.7rem', fontWeight:'bold', color:'#a5b4fc', marginBottom:'6px'}}>My Active</div>
+              <div style={{fontSize:'0.7rem', fontWeight:'bold', color:'#818cf8', marginBottom:'6px'}}>{t('tt.myActive')}</div>
               {[0, ...(numSlots > 1 ? [1] : [])].map(i => (
-                <ActiveSlot key={i} slotIdx={i} team={myTeam} activeIdx={turn.activeMy[i]} move={turn.movesMy[i]} ko={turn.koMy[i]} onSetActive={idx => { const t={...turn}; t.activeMy[i]=idx; onUpdate(t); }} onSetMove={m => { const t={...turn}; t.movesMy[i]=m; onUpdate(t); }} onSetKO={k => { const t={...turn}; t.koMy[i]=k; onUpdate(t); }} side="my" />
+                <ActiveSlot key={i} slotIdx={i} team={myTeam} activeIdx={turn.activeMy[i]} move={turn.movesMy[i]} ko={turn.koMy[i]} onSetActive={idx => { const tr={...turn}; tr.activeMy=[...tr.activeMy]; tr.activeMy[i]=idx; tr.movesMy=[...tr.movesMy]; tr.movesMy[i]=''; onUpdate(tr); }} onSetMove={m => { const tr={...turn}; tr.movesMy=[...tr.movesMy]; tr.movesMy[i]=m; onUpdate(tr); }} onSetKO={k => { const tr={...turn}; tr.koMy=[...tr.koMy]; tr.koMy[i]=k; onUpdate(tr); }} side="my" />
               ))}
             </div>
 
             <div style={{display:'flex', alignItems:'center', justifyContent:'center', color:'#4b5563'}}>vs</div>
 
             <div style={{background:'#0f0f0f', padding:'8px', borderRadius:'4px'}}>
-              <div style={{fontSize:'0.7rem', fontWeight:'bold', color:'#a5b4fc', marginBottom:'6px'}}>Foe Active</div>
+              <div style={{fontSize:'0.7rem', fontWeight:'bold', color:'#f59e0b', marginBottom:'6px'}}>{t('tt.foeActive')}</div>
               {[0, ...(numSlots > 1 ? [1] : [])].map(i => (
-                <ActiveSlot key={i} slotIdx={i} team={foeTeam} activeIdx={turn.activeFoe[i]} move={turn.movesFoe[i]} ko={turn.koFoe[i]} onSetActive={idx => { const t={...turn}; t.activeFoe[i]=idx; onUpdate(t); }} onSetMove={m => { const t={...turn}; t.movesFoe[i]=m; onUpdate(t); }} onSetKO={k => { const t={...turn}; t.koFoe[i]=k; onUpdate(t); }} side="foe" />
+                <ActiveSlot key={i} slotIdx={i} team={foeTeam} activeIdx={turn.activeFoe[i]} move={turn.movesFoe[i]} ko={turn.koFoe[i]} onSetActive={idx => { const tr={...turn}; tr.activeFoe=[...tr.activeFoe]; tr.activeFoe[i]=idx; tr.movesFoe=[...tr.movesFoe]; tr.movesFoe[i]=''; onUpdate(tr); }} onSetMove={m => { const tr={...turn}; tr.movesFoe=[...tr.movesFoe]; tr.movesFoe[i]=m; onUpdate(tr); }} onSetKO={k => { const tr={...turn}; tr.koFoe=[...tr.koFoe]; tr.koFoe[i]=k; onUpdate(tr); }} side="foe" />
               ))}
             </div>
           </div>
 
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginBottom:'8px'}}>
             <div style={{background:'#0f0f0f', padding:'6px', borderRadius:'4px'}}>
-              <div style={{fontSize:'0.65rem', color:'#64748b', marginBottom:'4px'}}>Weather</div>
+              <div style={{fontSize:'0.65rem', color:'#64748b', marginBottom:'4px'}}>{t('tt.weather')}</div>
               <div style={{display:'flex', gap:'4px', flexWrap:'wrap'}}>
-                {['sun', 'rain', 'sand', 'snow'].map(w => (
-                  <button key={w} onClick={() => { const t={...turn}; t.weather = t.weather === w ? null : w; onUpdate(t); }} style={{padding:'2px 6px', background: turn.weather === w ? 'rgba(99,102,241,0.6)' : 'rgba(99,102,241,0.2)', border:'none', borderRadius:'3px', color:'white', cursor:'pointer', fontSize:'0.65rem'}}>
-                    {w}
+                {['sun','rain','sand','snow'].map(w => (
+                  <button key={w} onClick={() => { const tr={...turn}; tr.weather = tr.weather===w?null:w; onUpdate(tr); }}
+                    style={{padding:'2px 6px', background: turn.weather===w?'rgba(99,102,241,0.6)':'rgba(99,102,241,0.2)', border:'none', borderRadius:'3px', color:'white', cursor:'pointer', fontSize:'0.65rem'}}>
+                    {t('tt.'+w)}
                   </button>
                 ))}
               </div>
             </div>
 
             <div style={{background:'#0f0f0f', padding:'6px', borderRadius:'4px'}}>
-              <div style={{fontSize:'0.65rem', color:'#64748b', marginBottom:'4px'}}>Field</div>
+              <div style={{fontSize:'0.65rem', color:'#64748b', marginBottom:'4px'}}>{t('tt.field')}</div>
               <div style={{display:'flex', gap:'4px', flexWrap:'wrap'}}>
-                <button onClick={() => { const t={...turn}; t.trickroom = !t.trickroom; onUpdate(t); }} style={{padding:'2px 6px', background: turn.trickroom ? 'rgba(99,102,241,0.6)' : 'rgba(99,102,241,0.2)', border:'none', borderRadius:'3px', color:'white', cursor:'pointer', fontSize:'0.65rem'}}>TR</button>
-                {['misty', 'psychic', 'grassy', 'electric'].map(t => (
-                  <button key={t} onClick={() => { const tr={...turn}; tr.terrain = tr.terrain === t ? null : t; onUpdate(tr); }} style={{padding:'2px 6px', background: turn.terrain === t ? 'rgba(99,102,241,0.6)' : 'rgba(99,102,241,0.2)', border:'none', borderRadius:'3px', color:'white', cursor:'pointer', fontSize:'0.65rem'}}>
-                    {t}
+                <button onClick={() => { const tr={...turn}; tr.trickroom=!tr.trickroom; onUpdate(tr); }}
+                  style={{padding:'2px 6px', background: turn.trickroom?'rgba(99,102,241,0.6)':'rgba(99,102,241,0.2)', border:'none', borderRadius:'3px', color:'white', cursor:'pointer', fontSize:'0.65rem'}}>
+                  {t('tt.tr')}
+                </button>
+                {['misty','psychic','grassy','electric'].map(terrain => (
+                  <button key={terrain} onClick={() => { const tr={...turn}; tr.terrain=tr.terrain===terrain?null:terrain; onUpdate(tr); }}
+                    style={{padding:'2px 6px', background: turn.terrain===terrain?'rgba(99,102,241,0.6)':'rgba(99,102,241,0.2)', border:'none', borderRadius:'3px', color:'white', cursor:'pointer', fontSize:'0.65rem'}}>
+                    {t('tt.'+terrain)}
                   </button>
                 ))}
               </div>
@@ -1445,11 +1555,12 @@
           </div>
 
           <div style={{background:'#0f0f0f', padding:'6px', borderRadius:'4px'}}>
-            <div style={{fontSize:'0.65rem', color:'#64748b', marginBottom:'4px'}}>Screens</div>
+            <div style={{fontSize:'0.65rem', color:'#64748b', marginBottom:'4px'}}>{t('tt.screens')}</div>
             <div style={{display:'flex', gap:'4px', flexWrap:'wrap'}}>
-              {['lightScreen', 'reflect', 'auroraVeil'].map(s => (
-                <button key={s} onClick={() => { const t={...turn}; t[s] = !t[s]; onUpdate(t); }} style={{padding:'2px 6px', background: turn[s] ? 'rgba(99,102,241,0.6)' : 'rgba(99,102,241,0.2)', border:'none', borderRadius:'3px', color:'white', cursor:'pointer', fontSize:'0.65rem'}}>
-                  {s === 'lightScreen' ? 'Light' : s === 'reflect' ? 'Reflect' : 'Aurora'}
+              {[['lightScreen','tt.ls'],['reflect','tt.reflect'],['auroraVeil','tt.av']].map(([s,key]) => (
+                <button key={s} onClick={() => { const tr={...turn}; tr[s]=!tr[s]; onUpdate(tr); }}
+                  style={{padding:'2px 6px', background: turn[s]?'rgba(99,102,241,0.6)':'rgba(99,102,241,0.2)', border:'none', borderRadius:'3px', color:'white', cursor:'pointer', fontSize:'0.65rem'}}>
+                  {t(key)}
                 </button>
               ))}
             </div>
@@ -1459,6 +1570,7 @@
     }
 
     function TurnTrackerTab({ tbTeam, tbMoves, tbAbilities }) {
+      const t = useT();
       const [mode, setMode] = useState('doubles');
       const [myTeam, setMyTeam] = useState(Array(6).fill(null).map(() => ({name:'', ability:'', moves:['','','',''], ko:false})));
       const [foeTeam, setFoeTeam] = useState(Array(6).fill(null).map(() => ({name:'', ability:'', moves:['','','',''], ko:false})));
@@ -1543,43 +1655,45 @@
       return (
         <div style={{width:'100%', padding:'16px', background:'#0a0a0a'}}>
           <div style={{display:'flex', gap:'8px', marginBottom:'16px', flexWrap:'wrap'}}>
-            {['singles', 'doubles'].map(m => (
-              <button key={m} onClick={() => setMode(m)} style={{padding:'6px 12px', background: mode === m ? '#6366f1' : '#374151', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.8rem', fontWeight:'bold'}}>
-                {m}
+            {['singles','doubles'].map(m => (
+              <button key={m} onClick={() => setMode(m)} style={{padding:'6px 12px', background: mode===m?'#6366f1':'#374151', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.8rem', fontWeight:'bold'}}>
+                {m==='singles' ? t('tt.singles') : t('tt.doubles')}
               </button>
             ))}
-            <button onClick={importFromTeambuilder} style={{padding:'6px 12px', background:'#6366f1', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.8rem'}}>Import Team</button>
-            <button onClick={() => setTurns([emptyTurn(1)])} style={{padding:'6px 12px', background:'#dc2626', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.8rem'}}>Reset Turns</button>
-            <button onClick={() => { setMyTeam(Array(6).fill(null).map(() => emptyPoke())); setFoeTeam(Array(6).fill(null).map(() => emptyPoke())); setTurns([emptyTurn(1)]); }} style={{padding:'6px 12px', background:'#dc2626', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.8rem'}}>Reset All</button>
-            <button onClick={exportCSV} style={{padding:'6px 12px', background:'#059669', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.8rem'}}>Export CSV</button>
+            <button onClick={importFromTeambuilder} style={{padding:'6px 12px', background:'#6366f1', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.8rem'}}>{t('tt.import')}</button>
+            <button onClick={() => setTurns([emptyTurn(1)])} style={{padding:'6px 12px', background:'#b45309', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.8rem'}}>{t('tt.resetTurns')}</button>
+            <button onClick={() => { setMyTeam(Array(6).fill(null).map(()=>emptyPoke())); setFoeTeam(Array(6).fill(null).map(()=>emptyPoke())); setTurns([emptyTurn(1)]); }} style={{padding:'6px 12px', background:'#dc2626', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.8rem'}}>{t('tt.resetAll')}</button>
+            <button onClick={exportCSV} style={{padding:'6px 12px', background:'#059669', color:'white', border:'none', borderRadius:'4px', cursor:'pointer', fontSize:'0.8rem'}}>{t('tt.csv')}</button>
           </div>
 
           <div style={{display:'grid', gridTemplateColumns:'minmax(320px,380px) 1fr minmax(320px,380px)', gap:'12px'}}>
             {/* My Team — 3×2 grid */}
             <div className="tracker-panel" style={{background:'#141414', border:'1px solid rgba(255,255,255,0.07)', borderRadius:'8px', padding:'10px'}}>
-              <div style={{fontSize:'0.75rem', fontWeight:'bold', color:'#a5b4fc', marginBottom:'8px', textTransform:'uppercase', letterSpacing:'0.06em'}}>My Team</div>
+              <div style={{fontSize:'0.75rem', fontWeight:'bold', color:'#a5b4fc', marginBottom:'8px', textTransform:'uppercase', letterSpacing:'0.06em'}}>{t('tt.myTeam')}</div>
               <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6}}>
                 {myTeam.map((entry, idx) => (
-                  <TrackerPokeSlot key={idx} entry={entry} onUpdate={e => { const t=[...myTeam]; t[idx]=e; setMyTeam(t); }} onRemove={() => { const t=[...myTeam]; t[idx]=emptyPoke(); setMyTeam(t); }} />
+                  <TrackerPokeSlot key={idx} entry={entry} onUpdate={e => { const tm=[...myTeam]; tm[idx]=e; setMyTeam(tm); }} onRemove={() => { const tm=[...myTeam]; tm[idx]=emptyPoke(); setMyTeam(tm); }} />
                 ))}
               </div>
             </div>
 
             {/* Turns */}
             <div className="turns-col" style={{background:'#141414', border:'1px solid rgba(255,255,255,0.07)', borderRadius:'8px', padding:'12px'}}>
-              <div style={{fontSize:'0.75rem', fontWeight:'bold', color:'#a5b4fc', marginBottom:'8px', textTransform:'uppercase', letterSpacing:'0.06em'}}>Turns</div>
-              {turns.map(t => (
-                <TurnCard key={t.id} turn={t} myTeam={myTeam} foeTeam={foeTeam} mode={mode} onUpdate={updated => { const idx=turns.findIndex(x=>x.id===t.id); if(idx!==-1){const nt=[...turns]; nt[idx]=updated; setTurns(nt);} }} onRemove={() => { if(turns.length>1) setTurns(turns.filter(x=>x.id!==t.id)); }} />
+              <div style={{fontSize:'0.75rem', fontWeight:'bold', color:'#a5b4fc', marginBottom:'8px', textTransform:'uppercase', letterSpacing:'0.06em'}}>{t('tt.turns')}</div>
+              {turns.map(turn => (
+                <TurnCard key={turn.id} turn={turn} myTeam={myTeam} foeTeam={foeTeam} mode={mode}
+                  onUpdate={updated => { const idx=turns.findIndex(x=>x.id===turn.id); if(idx!==-1){const nt=[...turns]; nt[idx]=updated; setTurns(nt);} }}
+                  onRemove={() => { if(turns.length>1) setTurns(turns.filter(x=>x.id!==turn.id)); }} />
               ))}
-              <button onClick={addTurn} style={{width:'100%', padding:'8px', background:'rgba(99,102,241,0.2)', color:'#a5b4fc', border:'1px dashed rgba(99,102,241,0.4)', borderRadius:'6px', cursor:'pointer', fontSize:'0.8rem', fontWeight:'bold'}}>+ Add Turn</button>
+              <button onClick={addTurn} style={{width:'100%', padding:'8px', background:'rgba(99,102,241,0.2)', color:'#a5b4fc', border:'1px dashed rgba(99,102,241,0.4)', borderRadius:'6px', cursor:'pointer', fontSize:'0.8rem', fontWeight:'bold'}}>{t('tt.addTurn')}</button>
             </div>
 
             {/* Foe Team — 3×2 grid */}
             <div className="tracker-panel" style={{background:'#141414', border:'1px solid rgba(255,255,255,0.07)', borderRadius:'8px', padding:'10px'}}>
-              <div style={{fontSize:'0.75rem', fontWeight:'bold', color:'#f59e0b', marginBottom:'8px', textTransform:'uppercase', letterSpacing:'0.06em'}}>Foe Team</div>
+              <div style={{fontSize:'0.75rem', fontWeight:'bold', color:'#f59e0b', marginBottom:'8px', textTransform:'uppercase', letterSpacing:'0.06em'}}>{t('tt.foeTeam')}</div>
               <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:6}}>
                 {foeTeam.map((entry, idx) => (
-                  <TrackerPokeSlot key={idx} entry={entry} onUpdate={e => { const t=[...foeTeam]; t[idx]=e; setFoeTeam(t); }} onRemove={() => { const t=[...foeTeam]; t[idx]=emptyPoke(); setFoeTeam(t); }} />
+                  <TrackerPokeSlot key={idx} entry={entry} onUpdate={e => { const fm=[...foeTeam]; fm[idx]=e; setFoeTeam(fm); }} onRemove={() => { const fm=[...foeTeam]; fm[idx]=emptyPoke(); setFoeTeam(fm); }} />
                 ))}
               </div>
             </div>
@@ -1594,6 +1708,8 @@
       const [moveSelectors, setMoveSelectors] = useState(Array(6).fill(null).map(() => ['','','','']));
       const [abilitySelectors, setAbilitySelectors] = useState(Array(6).fill(''));
       const [tooltipData, setTooltipData] = useState(null);
+      const [lang, setLang] = useState('en');
+      const t = (key) => (T[lang] && T[lang][key]) || (T['en'] && T['en'][key]) || key;
 
       const handleHoverPokemon = useCallback((pokemon, event) => {
         if (pokemon && event) {
@@ -1607,36 +1723,48 @@
         if (team.some(p => p && p.slug === pokemon.slug)) return;
         const idx = team.findIndex(p => !p);
         if (idx !== -1) {
-          const t = [...team]; t[idx] = pokemon; setTeam(t);
+          const tm = [...team]; tm[idx] = pokemon; setTeam(tm);
         }
       }, [team]);
 
       const tabs = [
-        { id: 'roster', label: 'Roster' },
-        { id: 'teambuilder', label: 'Teambuilder' },
-        { id: 'items', label: 'Items' },
-        { id: 'synergies', label: 'Synergies' },
-        { id: 'tracker', label: 'Turn Tracker' },
+        { id: 'roster',      key: 'tab.roster' },
+        { id: 'teambuilder', key: 'tab.teambuilder' },
+        { id: 'items',       key: 'tab.items' },
+        { id: 'synergies',   key: 'tab.synergies' },
+        { id: 'tracker',     key: 'tab.tracker' },
       ];
 
       return (
+        <LangContext.Provider value={lang}>
         <div className="min-h-screen" style={{backgroundColor:'#0a0a0a'}}>
           <header style={{backgroundColor:'#111111',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
             <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
               <div>
                 <h1 className="text-2xl font-bold" style={{color:'#a5b4fc',letterSpacing:'-0.02em'}}>Champions DB</h1>
-                <div className="text-xs" style={{color:'#4b5563'}}>Regulation M-A · April – June 2026</div>
+                <div className="text-xs" style={{color:'#4b5563'}}>{t('reg')}</div>
               </div>
-              <nav className="flex gap-2">
-                {tabs.map(t => (
-                  <button key={t.id} onClick={() => setActiveTab(t.id)}
-                    className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${activeTab===t.id ? 'tab-active' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>
-                    {t.label}
+              <nav className="flex gap-2 flex-wrap">
+                {tabs.map(tab => (
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                    className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${activeTab===tab.id ? 'tab-active' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}>
+                    {t(tab.key)}
                   </button>
                 ))}
               </nav>
-              <div className="text-xs px-2 py-1 rounded font-semibold" style={{background:'rgba(99,102,241,0.2)',color:'#a5b4fc',border:'1px solid rgba(99,102,241,0.3)'}}>
-                {team.filter(Boolean).length}/6
+              <div style={{display:'flex', alignItems:'center', gap:8}}>
+                <div className="text-xs px-2 py-1 rounded font-semibold" style={{background:'rgba(99,102,241,0.2)',color:'#a5b4fc',border:'1px solid rgba(99,102,241,0.3)'}}>
+                  {team.filter(Boolean).length}/6
+                </div>
+                {/* Language flags */}
+                <div style={{display:'flex', gap:4}}>
+                  {[['en','🇬🇧'],['fr','🇫🇷']].map(([l,flag]) => (
+                    <button key={l} onClick={() => setLang(l)} title={l==='en'?'English':'Français'}
+                      style={{fontSize:'1.3rem', cursor:'pointer', border:'none', background:'none', padding:'2px 3px', borderRadius:4, opacity: lang===l ? 1 : 0.35, transition:'opacity 0.15s', outline: lang===l ? '1px solid rgba(99,102,241,0.5)' : 'none'}}>
+                      {flag}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             <div className="max-w-7xl mx-auto px-4 pb-2 flex gap-1.5 items-center">
@@ -1660,6 +1788,7 @@
             {activeTab==='tracker' && <TurnTrackerTab tbTeam={team} tbMoves={moveSelectors} tbAbilities={abilitySelectors} />}
           </main>
         </div>
+        </LangContext.Provider>
       );
     }
 
