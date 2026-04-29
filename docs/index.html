@@ -404,63 +404,127 @@
       [1,0.5,1,1,1,1,2,0.5,1,1,1,1,0.5,1,1,2,0.5,1],
     ];
 
+    // Items available in Pokémon Champions — sourced from serebii.net/pokemonchampions/items.shtml
     const ITEMS = [
-      {name:"Air Balloon",category:"Survival",itemSprite:"air-balloon",effect:"Grants Ground immunity until hit"},
-      {name:"Alakazite",category:"Mega Stone",itemSprite:"alakazite",effect:"Mega Evolves Alakazam into Mega Alakazam"},
-      {name:"Aerodactylite",category:"Mega Stone",itemSprite:"aerodactylite",effect:"Mega Evolves Aerodactyl into Mega Aerodactyl"},
-      {name:"Ampharosite",category:"Mega Stone",itemSprite:"ampharosite",effect:"Mega Evolves Ampharos into Mega Ampharos"},
-      {name:"Aspear Berry",category:"Berry",itemSprite:"aspear-berry",effect:"Cures paralysis when holder is paralyzed"},
-      {name:"Assault Vest",category:"Bulk",itemSprite:"assault-vest",effect:"Increases Special Defense by 50% but prevents status moves"},
-      {name:"Black Glasses",category:"Damage",itemSprite:"black-glasses",effect:"Increases Dark-type move power by 20%"},
-      {name:"Bright Powder",category:"Utility",itemSprite:"bright-powder",effect:"Reduces accuracy of opponent by 10%"},
-      {name:"Charizardite Y",category:"Mega Stone",itemSprite:"charizardite-y",effect:"Mega Evolves Charizard into Mega Charizard Y"},
-      {name:"Charcoal",category:"Damage",itemSprite:"charcoal",effect:"Increases Fire-type move power by 20%"},
-      {name:"Charti Berry",category:"Berry",itemSprite:"charti-berry",effect:"Reduces super effective Rock damage by 50%"},
-      {name:"Chesto Berry",category:"Berry",itemSprite:"chesto-berry",effect:"Wakes up holder if asleep"},
-      {name:"Choice Band",category:"Choice",itemSprite:"choice-band",effect:"Increases Attack by 50% but locks into one move"},
-      {name:"Choice Scarf",category:"Choice",itemSprite:"choice-scarf",effect:"Increases Speed by 50% but locks into one move"},
-      {name:"Choice Specs",category:"Choice",itemSprite:"choice-specs",effect:"Increases Special Attack by 50% but locks into one move"},
-      {name:"Clear Amulet",category:"Survival",itemSprite:"clear-amulet",effect:"Prevents stat drops from opponent moves"},
-      {name:"Colbur Berry",category:"Berry",itemSprite:"colbur-berry",effect:"Reduces super effective Dark damage by 50%"},
-      {name:"Chople Berry",category:"Berry",itemSprite:"chople-berry",effect:"Reduces super effective Fighting damage by 50%"},
-      {name:"Dragon Fang",category:"Damage",itemSprite:"null",effect:"Increases Dragon-type move power by 20%"},
-      {name:"Dread Plate",category:"Damage",itemSprite:"dread-plate",effect:"Increases Dark-type move power by 20%"},
-      {name:"Eject Button",category:"Utility",itemSprite:"eject-button",effect:"Switches out when held Pokémon gets hit"},
-      {name:"Expert Belt",category:"Damage",itemSprite:"expert-belt",effect:"Increases super effective move power by 20%"},
-      {name:"Flame Orb",category:"Status",itemSprite:"flame-orb",effect:"Inflicts burn status"},
-      {name:"Focus Sash",category:"Survival",itemSprite:"focus-sash",effect:"Survives lethal hit with 1 HP once per battle"},
-      {name:"Gengarite",category:"Mega Stone",itemSprite:"gengarite",effect:"Mega Evolves Gengar into Mega Gengar"},
-      {name:"Gyaradosite",category:"Mega Stone",itemSprite:"gyaradosite",effect:"Mega Evolves Gyarados into Mega Gyarados"},
-      {name:"Haban Berry",category:"Berry",itemSprite:"haban-berry",effect:"Reduces super effective Dragon damage by 50%"},
-      {name:"Heracronite",category:"Mega Stone",itemSprite:"heracronite",effect:"Mega Evolves Heracross into Mega Heracross"},
-      {name:"Heavy-Duty Boots",category:"Survival",itemSprite:"heavy-duty-boots",effect:"Prevents damage from entry hazards"},
-      {name:"Kangaskhanite",category:"Mega Stone",itemSprite:"kangaskhanite",effect:"Mega Evolves Kangaskhan into Mega Kangaskhan"},
-      {name:"King's Rock",category:"Damage",itemSprite:"kings-rock",effect:"Adds 30% chance to flinch with moves"},
-      {name:"Leftovers",category:"Recovery",itemSprite:"leftovers",effect:"Restores 12.5% HP each turn"},
-      {name:"Life Orb",category:"Damage",itemSprite:"life-orb",effect:"Increases all move power by 30% but costs 10% HP per attack"},
-      {name:"Lum Berry",category:"Berry",itemSprite:"lum-berry",effect:"Cures any status condition once"},
-      {name:"Mental Herb",category:"Utility",itemSprite:"mental-herb",effect:"Removes attraction and Disable effects"},
-      {name:"Mystic Water",category:"Damage",itemSprite:"mystic-water",effect:"Increases Water-type move power by 20%"},
-      {name:"Occa Berry",category:"Berry",itemSprite:"occa-berry",effect:"Reduces super effective Fire damage by 50%"},
-      {name:"Passho Berry",category:"Berry",itemSprite:"passho-berry",effect:"Reduces super effective Water damage by 50%"},
-      {name:"Red Card",category:"Reactive",itemSprite:"red-card",effect:"Switches out attacker when held Pokémon gets hit"},
-      {name:"Rocky Helmet",category:"Bulk",itemSprite:"rocky-helmet",effect:"Deals 12.5% recoil to physical attackers"},
-      {name:"Roseli Berry",category:"Berry",itemSprite:"roseli-berry",effect:"Reduces super effective Fairy damage by 50%"},
-      {name:"Safety Goggles",category:"Survival",itemSprite:"safety-goggles",effect:"Prevents damage from weather and powder moves"},
-      {name:"Scizorite",category:"Mega Stone",itemSprite:"scizorite",effect:"Mega Evolves Scizor into Mega Scizor"},
-      {name:"Shell Bell",category:"Recovery",itemSprite:"shell-bell",effect:"Restores 12.5% of damage dealt to user"},
-      {name:"Shuca Berry",category:"Berry",itemSprite:"shuca-berry",effect:"Reduces super effective Ground damage by 50%"},
-      {name:"Silk Scarf",category:"Damage",itemSprite:"silk-scarf",effect:"Increases Normal-type move power by 20%"},
-      {name:"Sitrus Berry",category:"Berry",itemSprite:"sitrus-berry",effect:"Restores 25% HP when holder drops below 25%"},
-      {name:"Soft Sand",category:"Damage",itemSprite:"soft-sand",effect:"Increases Ground-type move power by 20%"},
-      {name:"Throat Spray",category:"Stat Boost",itemSprite:"throat-spray",effect:"Boosts Special Attack by 1 stage when Sound move is used"},
-      {name:"Toxic Orb",category:"Status",itemSprite:"toxic-orb",effect:"Inflicts badly poisoned status"},
-      {name:"Tyranitarite",category:"Mega Stone",itemSprite:"tyranitarite",effect:"Mega Evolves Tyranitar into Mega Tyranitar"},
-      {name:"Venusaurite",category:"Mega Stone",itemSprite:"venusaurite",effect:"Mega Evolves Venusaur into Mega Venusaur"},
-      {name:"Wacan Berry",category:"Berry",itemSprite:"wacan-berry",effect:"Reduces super effective Electric damage by 50%"},
-      {name:"Weakness Policy",category:"Reactive",itemSprite:"weakness-policy",effect:"Boosts Attack and SpAtk by +2 when hit super effectively"},
-      {name:"White Herb",category:"Utility",itemSprite:"white-herb",effect:"Clears stat drops when holder receives one"},
-      {name:"Yache Berry",category:"Berry",itemSprite:"yache-berry",effect:"Reduces super effective Ice damage by 50%"},
+      // ── Hold Items ──────────────────────────────────────────────────────────
+      {name:"Black Belt",    category:"Damage",   itemSprite:"black-belt",    effect:"Boosts the power of Fighting-type moves"},
+      {name:"Black Glasses", category:"Damage",   itemSprite:"black-glasses", effect:"Boosts the power of Dark-type moves"},
+      {name:"Bright Powder", category:"Utility",  itemSprite:"bright-powder", effect:"Lowers the accuracy of opposing Pokémon's moves"},
+      {name:"Charcoal",      category:"Damage",   itemSprite:"charcoal",      effect:"Boosts the power of Fire-type moves"},
+      {name:"Choice Scarf",  category:"Choice",   itemSprite:"choice-scarf",  effect:"Boosts Speed ×1.5 but locks into one move"},
+      {name:"Dragon Fang",   category:"Damage",   itemSprite:"dragon-fang",   effect:"Boosts the power of Dragon-type moves"},
+      {name:"Fairy Feather", category:"Damage",   itemSprite:"fairy-feather", effect:"Boosts the power of Fairy-type moves"},
+      {name:"Focus Band",    category:"Survival", itemSprite:"focus-band",    effect:"May allow holder to survive a KO hit with 1 HP"},
+      {name:"Focus Sash",    category:"Survival", itemSprite:"focus-sash",    effect:"Survives a lethal hit with 1 HP once (full HP required)"},
+      {name:"Hard Stone",    category:"Damage",   itemSprite:"hard-stone",    effect:"Boosts the power of Rock-type moves"},
+      {name:"King's Rock",   category:"Utility",  itemSprite:"kings-rock",    effect:"May cause the target to flinch when hit"},
+      {name:"Leftovers",     category:"Recovery", itemSprite:"leftovers",     effect:"Restores a little HP each turn"},
+      {name:"Light Ball",    category:"Utility",  itemSprite:"light-ball",    effect:"Boosts Pikachu's Attack and Sp. Atk stats"},
+      {name:"Magnet",        category:"Damage",   itemSprite:"magnet",        effect:"Boosts the power of Electric-type moves"},
+      {name:"Mental Herb",   category:"Utility",  itemSprite:"mental-herb",   effect:"Clears move-binding effects once"},
+      {name:"Metal Coat",    category:"Damage",   itemSprite:"metal-coat",    effect:"Boosts the power of Steel-type moves"},
+      {name:"Miracle Seed",  category:"Damage",   itemSprite:"miracle-seed",  effect:"Boosts the power of Grass-type moves"},
+      {name:"Mystic Water",  category:"Damage",   itemSprite:"mystic-water",  effect:"Boosts the power of Water-type moves"},
+      {name:"Never-Melt Ice",category:"Damage",   itemSprite:"never-melt-ice",effect:"Boosts the power of Ice-type moves"},
+      {name:"Poison Barb",   category:"Damage",   itemSprite:"poison-barb",   effect:"Boosts the power of Poison-type moves"},
+      {name:"Quick Claw",    category:"Utility",  itemSprite:"quick-claw",    effect:"Occasionally allows the holder to move first"},
+      {name:"Scope Lens",    category:"Utility",  itemSprite:"scope-lens",    effect:"Boosts the holder's critical-hit ratio"},
+      {name:"Sharp Beak",    category:"Damage",   itemSprite:"sharp-beak",    effect:"Boosts the power of Flying-type moves"},
+      {name:"Shell Bell",    category:"Recovery", itemSprite:"shell-bell",    effect:"Restores HP equal to 1/8 of damage dealt"},
+      {name:"Silk Scarf",    category:"Damage",   itemSprite:"silk-scarf",    effect:"Boosts the power of Normal-type moves"},
+      {name:"Silver Powder", category:"Damage",   itemSprite:"silver-powder", effect:"Boosts the power of Bug-type moves"},
+      {name:"Soft Sand",     category:"Damage",   itemSprite:"soft-sand",     effect:"Boosts the power of Ground-type moves"},
+      {name:"Spell Tag",     category:"Damage",   itemSprite:"spell-tag",     effect:"Boosts the power of Ghost-type moves"},
+      {name:"Twisted Spoon", category:"Damage",   itemSprite:"twisted-spoon", effect:"Boosts the power of Psychic-type moves"},
+      {name:"White Herb",    category:"Utility",  itemSprite:"white-herb",    effect:"Restores lowered stats once in battle"},
+      // ── Mega Stones ─────────────────────────────────────────────────────────
+      {name:"Abomasite",     category:"Mega Stone",itemSprite:"abomasite",    effect:"Mega Evolves Abomasnow"},
+      {name:"Absolite",      category:"Mega Stone",itemSprite:"absolite",     effect:"Mega Evolves Absol"},
+      {name:"Aerodactylite", category:"Mega Stone",itemSprite:"aerodactylite",effect:"Mega Evolves Aerodactyl"},
+      {name:"Aggronite",     category:"Mega Stone",itemSprite:"aggronite",    effect:"Mega Evolves Aggron"},
+      {name:"Alakazite",     category:"Mega Stone",itemSprite:"alakazite",    effect:"Mega Evolves Alakazam"},
+      {name:"Altarianite",   category:"Mega Stone",itemSprite:"altarianite",  effect:"Mega Evolves Altaria"},
+      {name:"Ampharosite",   category:"Mega Stone",itemSprite:"ampharosite",  effect:"Mega Evolves Ampharos"},
+      {name:"Audinite",      category:"Mega Stone",itemSprite:"audinite",     effect:"Mega Evolves Audino"},
+      {name:"Banettite",     category:"Mega Stone",itemSprite:"banettite",    effect:"Mega Evolves Banette"},
+      {name:"Beedrillite",   category:"Mega Stone",itemSprite:"beedrillite",  effect:"Mega Evolves Beedrill"},
+      {name:"Blastoisinite", category:"Mega Stone",itemSprite:"blastoisinite",effect:"Mega Evolves Blastoise"},
+      {name:"Cameruptite",   category:"Mega Stone",itemSprite:"cameruptite",  effect:"Mega Evolves Camerupt"},
+      {name:"Chandelurite",  category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Chandelure"},
+      {name:"Charizardite X",category:"Mega Stone",itemSprite:"charizardite-x",effect:"Mega Evolves Charizard into Fire/Dragon"},
+      {name:"Charizardite Y",category:"Mega Stone",itemSprite:"charizardite-y",effect:"Mega Evolves Charizard — sets Drought"},
+      {name:"Chesnaughtite", category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Chesnaught"},
+      {name:"Clefablite",    category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Clefable"},
+      {name:"Crabominite",   category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Crabominable"},
+      {name:"Delphoxite",    category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Delphox"},
+      {name:"Dragoninite",   category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Dragonite"},
+      {name:"Drampanite",    category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Drampa"},
+      {name:"Emboarite",     category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Emboar"},
+      {name:"Excadrite",     category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Excadrill"},
+      {name:"Feraligite",    category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Feraligatr"},
+      {name:"Floettite",     category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Floette — Fairy Aura"},
+      {name:"Froslassite",   category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Froslass — Snow Warning"},
+      {name:"Galladite",     category:"Mega Stone",itemSprite:"galladite",    effect:"Mega Evolves Gallade"},
+      {name:"Garchompite",   category:"Mega Stone",itemSprite:"garchompite",  effect:"Mega Evolves Garchomp"},
+      {name:"Gardevoirite",  category:"Mega Stone",itemSprite:"gardevoirite", effect:"Mega Evolves Gardevoir"},
+      {name:"Gengarite",     category:"Mega Stone",itemSprite:"gengarite",    effect:"Mega Evolves Gengar — Shadow Tag"},
+      {name:"Glalitite",     category:"Mega Stone",itemSprite:"glalitite",    effect:"Mega Evolves Glalie"},
+      {name:"Glimmoranite",  category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Glimmora"},
+      {name:"Golurkite",     category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Golurk"},
+      {name:"Greninjite",    category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Greninja"},
+      {name:"Gyaradosite",   category:"Mega Stone",itemSprite:"gyaradosite",  effect:"Mega Evolves Gyarados"},
+      {name:"Hawluchanite",  category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Hawlucha"},
+      {name:"Heracronite",   category:"Mega Stone",itemSprite:"heracronite",  effect:"Mega Evolves Heracross"},
+      {name:"Houndoominite", category:"Mega Stone",itemSprite:"houndoominite",effect:"Mega Evolves Houndoom"},
+      {name:"Kangaskhanite", category:"Mega Stone",itemSprite:"kangaskhanite",effect:"Mega Evolves Kangaskhan — Parental Bond"},
+      {name:"Lopunnite",     category:"Mega Stone",itemSprite:"lopunnite",    effect:"Mega Evolves Lopunny"},
+      {name:"Lucarionite",   category:"Mega Stone",itemSprite:"lucarionite",  effect:"Mega Evolves Lucario"},
+      {name:"Manectite",     category:"Mega Stone",itemSprite:"manectite",    effect:"Mega Evolves Manectric"},
+      {name:"Medichamite",   category:"Mega Stone",itemSprite:"medichamite",  effect:"Mega Evolves Medicham — Pure Power"},
+      {name:"Meganiumite",   category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Meganium"},
+      {name:"Meowsticite",   category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Meowstic"},
+      {name:"Pidgeotite",    category:"Mega Stone",itemSprite:"pidgeotite",   effect:"Mega Evolves Pidgeot — No Guard"},
+      {name:"Pinsirite",     category:"Mega Stone",itemSprite:"pinsirite",    effect:"Mega Evolves Pinsir"},
+      {name:"Sablenite",     category:"Mega Stone",itemSprite:"sablenite",    effect:"Mega Evolves Sableye — Magic Bounce"},
+      {name:"Scizorite",     category:"Mega Stone",itemSprite:"scizorite",    effect:"Mega Evolves Scizor"},
+      {name:"Scovillainite", category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Scovillain"},
+      {name:"Sharpedonite",  category:"Mega Stone",itemSprite:"sharpedonite", effect:"Mega Evolves Sharpedo"},
+      {name:"Skarmorite",    category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Skarmory"},
+      {name:"Slowbronite",   category:"Mega Stone",itemSprite:"slowbronite",  effect:"Mega Evolves Slowbro"},
+      {name:"Starminite",    category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Starmie"},
+      {name:"Steelixite",    category:"Mega Stone",itemSprite:"steelixite",   effect:"Mega Evolves Steelix"},
+      {name:"Tyranitarite",  category:"Mega Stone",itemSprite:"tyranitarite", effect:"Mega Evolves Tyranitar — Sand Stream"},
+      {name:"Venusaurite",   category:"Mega Stone",itemSprite:"venusaurite",  effect:"Mega Evolves Venusaur — Thick Fat"},
+      {name:"Victreebelite", category:"Mega Stone",itemSprite:"null",         effect:"Mega Evolves Victreebel"},
+      // ── Berries ─────────────────────────────────────────────────────────────
+      {name:"Aspear Berry",  category:"Berry",itemSprite:"aspear-berry",  effect:"Thaws holder from freeze"},
+      {name:"Babiri Berry",  category:"Berry",itemSprite:"babiri-berry",  effect:"Weakens a supereffective Steel-type hit"},
+      {name:"Charti Berry",  category:"Berry",itemSprite:"charti-berry",  effect:"Weakens a supereffective Rock-type hit"},
+      {name:"Cheri Berry",   category:"Berry",itemSprite:"cheri-berry",   effect:"Cures paralysis"},
+      {name:"Chesto Berry",  category:"Berry",itemSprite:"chesto-berry",  effect:"Cures sleep"},
+      {name:"Chilan Berry",  category:"Berry",itemSprite:"chilan-berry",  effect:"Weakens a Normal-type hit"},
+      {name:"Chople Berry",  category:"Berry",itemSprite:"chople-berry",  effect:"Weakens a supereffective Fighting-type hit"},
+      {name:"Coba Berry",    category:"Berry",itemSprite:"coba-berry",    effect:"Weakens a supereffective Flying-type hit"},
+      {name:"Colbur Berry",  category:"Berry",itemSprite:"colbur-berry",  effect:"Weakens a supereffective Dark-type hit"},
+      {name:"Haban Berry",   category:"Berry",itemSprite:"haban-berry",   effect:"Weakens a supereffective Dragon-type hit"},
+      {name:"Kasib Berry",   category:"Berry",itemSprite:"kasib-berry",   effect:"Weakens a supereffective Ghost-type hit"},
+      {name:"Kebia Berry",   category:"Berry",itemSprite:"kebia-berry",   effect:"Weakens a supereffective Poison-type hit"},
+      {name:"Leppa Berry",   category:"Berry",itemSprite:"leppa-berry",   effect:"Restores 10 PP to a move"},
+      {name:"Lum Berry",     category:"Berry",itemSprite:"lum-berry",     effect:"Cures any status condition"},
+      {name:"Occa Berry",    category:"Berry",itemSprite:"occa-berry",    effect:"Weakens a supereffective Fire-type hit"},
+      {name:"Oran Berry",    category:"Berry",itemSprite:"oran-berry",    effect:"Restores 10 HP"},
+      {name:"Passho Berry",  category:"Berry",itemSprite:"passho-berry",  effect:"Weakens a supereffective Water-type hit"},
+      {name:"Payapa Berry",  category:"Berry",itemSprite:"payapa-berry",  effect:"Weakens a supereffective Psychic-type hit"},
+      {name:"Pecha Berry",   category:"Berry",itemSprite:"pecha-berry",   effect:"Cures poison"},
+      {name:"Persim Berry",  category:"Berry",itemSprite:"persim-berry",  effect:"Cures confusion"},
+      {name:"Rawst Berry",   category:"Berry",itemSprite:"rawst-berry",   effect:"Cures burn"},
+      {name:"Rindo Berry",   category:"Berry",itemSprite:"rindo-berry",   effect:"Weakens a supereffective Grass-type hit"},
+      {name:"Roseli Berry",  category:"Berry",itemSprite:"roseli-berry",  effect:"Weakens a supereffective Fairy-type hit"},
+      {name:"Shuca Berry",   category:"Berry",itemSprite:"shuca-berry",   effect:"Weakens a supereffective Ground-type hit"},
+      {name:"Sitrus Berry",  category:"Berry",itemSprite:"sitrus-berry",  effect:"Restores 25% HP when below 50%"},
+      {name:"Tanga Berry",   category:"Berry",itemSprite:"tanga-berry",   effect:"Weakens a supereffective Bug-type hit"},
+      {name:"Wacan Berry",   category:"Berry",itemSprite:"wacan-berry",   effect:"Weakens a supereffective Electric-type hit"},
+      {name:"Yache Berry",   category:"Berry",itemSprite:"yache-berry",   effect:"Weakens a supereffective Ice-type hit"},
     ];
 
     const USAGE = {
@@ -517,9 +581,9 @@
         'tb.atk': 'Atk', 'tb.def': 'Def', 'tb.add': '+ Add',
         // Items
         'items.search': 'Search items…', 'items.all': 'All',
-        'cat.Berry':'Berry','cat.Choice':'Choice','cat.Damage':'Damage','cat.Bulk':'Bulk',
-        'cat.Survival':'Survival','cat.Stat Boost':'Stat Boost','cat.Mega Stone':'Mega Stone',
-        'cat.Recovery':'Recovery','cat.Reactive':'Reactive','cat.Status':'Status','cat.Utility':'Utility',
+        'cat.Berry':'Berry','cat.Choice':'Choice','cat.Damage':'Damage',
+        'cat.Survival':'Survival','cat.Mega Stone':'Mega Stone',
+        'cat.Recovery':'Recovery','cat.Utility':'Utility',
         // Synergies
         'syn.all':'All','syn.core':'Core:','syn.partners':'Partners:',
         'syn.Weather':'Weather','syn.Trick Room':'Trick Room','syn.Setup':'Setup',
@@ -560,9 +624,9 @@
         'tb.atk': 'Att.', 'tb.def': 'Déf.', 'tb.add': '+ Ajouter',
         // Items
         'items.search': 'Rechercher un objet…', 'items.all': 'Tous',
-        'cat.Berry':'Baie','cat.Choice':'Choix','cat.Damage':'Dégâts','cat.Bulk':'Solidité',
-        'cat.Survival':'Survie','cat.Stat Boost':'Stats+','cat.Mega Stone':'Pierre Méga',
-        'cat.Recovery':'Récup.','cat.Reactive':'Réactif','cat.Status':'Statut','cat.Utility':'Utilitaire',
+        'cat.Berry':'Baie','cat.Choice':'Choix','cat.Damage':'Dégâts',
+        'cat.Survival':'Survie','cat.Mega Stone':'Pierre Méga',
+        'cat.Recovery':'Récup.','cat.Utility':'Utilitaire',
         // Synergies
         'syn.all':'Tous','syn.core':'Noyau :','syn.partners':'Partenaires :',
         'syn.Weather':'Météo','syn.Trick Room':'Salle Insolite','syn.Setup':'Mise en place',
@@ -942,6 +1006,20 @@
     function TeambuilderTab({ team, setTeam, onHoverPokemon, tooltipData, moveSelectors, setMoveSelectors, abilitySelectors, setAbilitySelectors }) {
       const t = useT();
       const [itemSelectors, setItemSelectors] = useState(Array(6).fill(null));
+      // ── Tooltip lock on click ──────────────────────────────────────────────
+      const [lockedPokemon, setLockedPokemon] = useState(null);
+      // Unlock on any document click (outside suggestion cards)
+      useEffect(() => {
+        if (!lockedPokemon) return;
+        const unlock = () => { setLockedPokemon(null); onHoverPokemon(null); };
+        document.addEventListener('click', unlock);
+        return () => document.removeEventListener('click', unlock);
+      }, [lockedPokemon]);
+      const lockTooltip = (pokemon, e) => {
+        e.stopPropagation(); // don't immediately trigger the unlock listener
+        setLockedPokemon(pokemon);
+        onHoverPokemon(pokemon, e);
+      };
 
       const removeFromTeam = i => {
         const t=[...team]; t[i]=null; setTeam(t);
@@ -1163,12 +1241,16 @@
               <p className="text-xs mb-3" style={{color:'#64748b'}}>{t('tb.suggHint')}</p>
             )}
             <div className="grid gap-2" style={{gridTemplateColumns:'repeat(auto-fill,minmax(110px,1fr))'}}>
-              {suggestions.map(({ pokemon, score }) => (
+              {suggestions.map(({ pokemon, score }) => {
+                const isLocked = lockedPokemon?.slug === pokemon.slug;
+                return (
                 <div
                   key={pokemon.slug}
-                  className="card p-2 rounded cursor-pointer text-center transition-all hover:border-indigo-500"
-                  onMouseEnter={e => onHoverPokemon(pokemon, e)}
-                  onMouseLeave={() => onHoverPokemon(null)}
+                  className="card p-2 rounded cursor-pointer text-center transition-all"
+                  style={{borderColor: isLocked ? '#a5b4fc' : 'rgba(255,255,255,0.07)', boxShadow: isLocked ? '0 0 0 1px #6366f1' : 'none'}}
+                  onMouseEnter={e => { if (!lockedPokemon) onHoverPokemon(pokemon, e); }}
+                  onMouseLeave={() => { if (!lockedPokemon) onHoverPokemon(null); }}
+                  onClick={e => lockTooltip(pokemon, e)}
                 >
                   <div className="sprite-box mx-auto mb-1">
                     <img src={getSpriteUrl(pokemon)} alt={pokemon.name} loading="lazy" />
@@ -1178,14 +1260,15 @@
                     <div className="text-xs mb-1" style={{color:'#a5b4fc'}}>Score {score}</div>
                   )}
                   <button
-                    onClick={() => {
+                    onClick={e => {
+                      e.stopPropagation();
                       const idx = team.findIndex(p => !p);
-                      if (idx !== -1) { const t=[...team]; t[idx]=pokemon; setTeam(t); }
+                      if (idx !== -1) { const tm=[...team]; tm[idx]=pokemon; setTeam(tm); }
                     }}
                     className="btn-primary w-full"
                   >+ Add</button>
                 </div>
-              ))}
+              );})}
             </div>
           </div>
 
@@ -1198,7 +1281,7 @@
       const t = useT();
       const [search, setSearch] = useState("");
       const [cat, setCat] = useState("All");
-      const categories = ["All","Berry","Choice","Damage","Bulk","Survival","Stat Boost","Mega Stone","Recovery","Reactive","Status","Utility"];
+      const categories = ["All","Berry","Choice","Damage","Recovery","Survival","Utility","Mega Stone"];
 
       const filtered = useMemo(() => ITEMS.filter(item => {
         const ms = item.name.toLowerCase().includes(search.toLowerCase());
