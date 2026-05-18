@@ -780,6 +780,32 @@
       return <span className={`type-badge type-${type.toLowerCase()}`}>{type}</span>;
     }
 
+    function getDefensiveMult(pokeTypes, attackType) {
+      const attIdx = TYPES.indexOf(attackType.toLowerCase());
+      if (attIdx === -1) return 1;
+      let mult = 1;
+      pokeTypes.forEach(defType => {
+        const defIdx = TYPES.indexOf(defType);
+        if (defIdx !== -1) mult *= TYPE_CHART[attIdx][defIdx];
+      });
+      return mult;
+    }
+
+    function parseFilters(searchStr) {
+      const tokens = searchStr.trim().split(/\s+/).filter(Boolean);
+      const filters = [];
+      const nameTokens = [];
+      for (const token of tokens) {
+        const match = token.match(/^(type|resists|weak|immune|ability|move):(.+)$/i);
+        if (match) {
+          filters.push({ kind: match[1].toLowerCase(), value: match[2].toLowerCase().replace(/ /g, '-') });
+        } else {
+          nameTokens.push(token);
+        }
+      }
+      return { nameQuery: nameTokens.join(' '), filters };
+    }
+
     function usePokemon(slug) {
       const [data, setData] = useState(pokemonCache[slug] || null);
       const [loading, setLoading] = useState(false);
@@ -897,29 +923,117 @@
       const t = useT();
       const [search, setSearch] = useState("");
       const [typeFilter, setTypeFilter] = useState([]);
+      const [fetchTick, setFetchTick] = useState(0);
+      const [showHelp, setShowHelp] = useState(false);
+
+      const { nameQuery, filters } = useMemo(() => parseFilters(search), [search]);
+      const hasApiFilters = filters.some(f => f.kind === 'move' || f.kind === 'ability');
+
+      useEffect(() => {
+        if (!hasApiFilters) return;
+        ROSTER.forEach(p => {
+          if (pokemonCache[p.slug]) return;
+          fetch(`https://pokeapi.co/api/v2/pokemon/${p.slug}`)
+            .then(r => r.json())
+            .then(d => { pokemonCache[p.slug] = d; setFetchTick(n => n + 1); })
+            .catch(() => {});
+        });
+      }, [hasApiFilters]);
+
+      const isLoadingApiFilters = hasApiFilters && ROSTER.some(p => !pokemonCache[p.slug]);
 
       const filtered = useMemo(() => {
         return ROSTER.filter(p => {
-          const ms = p.name.toLowerCase().includes(search.toLowerCase());
-          const mt = typeFilter.length === 0 || typeFilter.some(t => p.types.includes(t));
-          return ms && mt;
+          if (nameQuery && !p.name.toLowerCase().includes(nameQuery.toLowerCase())) return false;
+          if (typeFilter.length > 0 && !typeFilter.every(tp => p.types.includes(tp))) return false;
+          for (const f of filters) {
+            if (f.kind === 'type') {
+              if (!p.types.includes(f.value)) return false;
+            } else if (f.kind === 'resists') {
+              if (getDefensiveMult(p.types, f.value) > 0.5) return false;
+            } else if (f.kind === 'immune') {
+              if (getDefensiveMult(p.types, f.value) !== 0) return false;
+            } else if (f.kind === 'weak') {
+              if (getDefensiveMult(p.types, f.value) < 2) return false;
+            } else if (f.kind === 'ability') {
+              const d = pokemonCache[p.slug];
+              if (!d) return false;
+              if (!d.abilities.some(a => a.ability.name.includes(f.value))) return false;
+            } else if (f.kind === 'move') {
+              const d = pokemonCache[p.slug];
+              if (!d) return false;
+              if (!d.moves.some(m => m.move.name.includes(f.value))) return false;
+            }
+          }
+          return true;
         });
-      }, [search, typeFilter]);
+      }, [search, typeFilter, fetchTick]);
 
       const toggleType = (type) => setTypeFilter(prev =>
-        prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+        prev.includes(type) ? prev.filter(tp => tp !== type) : [...prev, type]
       );
+
+      const removeFilter = (idx) => {
+        const tokens = search.trim().split(/\s+/).filter(Boolean);
+        let filterCount = 0;
+        const newTokens = tokens.filter(token => {
+          const isFilter = /^(type|resists|weak|immune|ability|move):.+$/i.test(token);
+          if (isFilter) {
+            if (filterCount === idx) { filterCount++; return false; }
+            filterCount++;
+          }
+          return true;
+        });
+        setSearch(newTokens.join(' '));
+      };
 
       return (
         <div>
           <div className="mb-3">
-            <input
-              type="text"
-              placeholder={t('roster.search')}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-900 text-white rounded border border-gray-700 focus:outline-none focus:border-indigo-500 text-sm"
-            />
+            <div style={{display:'flex', alignItems:'center', gap:6}}>
+              <input
+                type="text"
+                placeholder="Search… or type:fire · resists:water · weak:rock · immune:ground · ability:levitate · move:earthquake"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-900 text-white rounded border border-gray-700 focus:outline-none focus:border-indigo-500 text-sm"
+              />
+              <button
+                onClick={() => setShowHelp(h => !h)}
+                title="Filter syntax help"
+                style={{flexShrink:0, width:28, height:28, borderRadius:'50%', background: showHelp ? '#312e81' : '#1e1e2e', border:'1px solid rgba(165,180,252,0.25)', color:'#a5b4fc', fontWeight:'bold', fontSize:13, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}
+              >?</button>
+            </div>
+            {showHelp && (
+              <div style={{marginTop:6, padding:'10px 12px', background:'#0f0f1a', border:'1px solid rgba(165,180,252,0.2)', borderRadius:8, fontSize:'0.75rem', color:'#94a3b8', lineHeight:1.8}}>
+                <div style={{color:'#a5b4fc', fontWeight:'bold', marginBottom:4}}>Filter syntax — all active filters must match (AND logic)</div>
+                <div><code style={{color:'#6ee7b7'}}>type:fire</code> — Has Fire type</div>
+                <div><code style={{color:'#6ee7b7'}}>resists:water</code> — Takes ×0.5 or less from Water (includes immune)</div>
+                <div><code style={{color:'#6ee7b7'}}>weak:rock</code> — Takes ×2 or more from Rock</div>
+                <div><code style={{color:'#6ee7b7'}}>immune:ground</code> — Fully immune to Ground (×0)</div>
+                <div><code style={{color:'#6ee7b7'}}>ability:levitate</code> — Has ability matching name (partial, loads data)</div>
+                <div><code style={{color:'#6ee7b7'}}>move:earthquake</code> — Learns move matching name (partial, loads data)</div>
+                <div style={{marginTop:4, color:'#64748b'}}>Combine freely: <code style={{color:'#c7d2fe'}}>type:steel immune:ground</code> · <code style={{color:'#c7d2fe'}}>resists:fire weak:water</code></div>
+              </div>
+            )}
+            {filters.length > 0 && (
+              <div style={{display:'flex', flexWrap:'wrap', gap:5, marginTop:6}}>
+                {filters.map((f, i) => (
+                  <span key={i} style={{display:'inline-flex', alignItems:'center', gap:4, padding:'2px 8px 2px 10px', background:'#312e81', border:'1px solid #6366f1', borderRadius:999, fontSize:'0.72rem', color:'#c7d2fe', fontWeight:600}}>
+                    <span style={{color:'#a5b4fc', marginRight:1}}>{f.kind}:</span>{f.value}
+                    <button
+                      onClick={() => removeFilter(i)}
+                      style={{marginLeft:3, background:'none', border:'none', color:'#818cf8', cursor:'pointer', padding:0, lineHeight:1, fontSize:15, fontWeight:400}}
+                    >×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {isLoadingApiFilters && (
+              <div style={{marginTop:5, fontSize:'0.72rem', color:'#64748b'}}>
+                Loading Pokémon data… ({ROSTER.filter(p => pokemonCache[p.slug]).length}/{ROSTER.length})
+              </div>
+            )}
           </div>
           <div className="mb-4 flex flex-wrap gap-1.5">
             {TYPES.map(type => (
@@ -953,7 +1067,7 @@
                 </div>
                 <div className="text-xs font-bold mb-1 leading-tight"><PokemonName pokemon={pokemon} /></div>
                 <div className="flex gap-1 justify-center flex-wrap mb-1.5">
-                  {pokemon.types.map(t => <TypeBadge key={t} type={t} />)}
+                  {pokemon.types.map(tp => <TypeBadge key={tp} type={tp} />)}
                 </div>
                 {USAGE[pokemon.name] && (
                   <div className="text-xs mb-1" style={{color:'#a5b4fc'}}>{USAGE[pokemon.name]}%</div>
