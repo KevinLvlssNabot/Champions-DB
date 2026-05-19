@@ -936,9 +936,10 @@
       const [valueInput, setValueInput] = useState('');
 
       const hasApiFilters = activeFilters.some(f => f.kind === 'move' || f.kind === 'ability');
+      const filterPanelNeedsApi = filterMenu && filterMenu !== 'kind' && (filterMenu.kind === 'move' || filterMenu.kind === 'ability');
 
       useEffect(() => {
-        if (!hasApiFilters) return;
+        if (!hasApiFilters && !filterPanelNeedsApi) return;
         ROSTER.forEach(p => {
           if (pokemonCache[p.slug]) return;
           fetch(`https://pokeapi.co/api/v2/pokemon/${p.slug}`)
@@ -946,9 +947,27 @@
             .then(d => { pokemonCache[p.slug] = d; setFetchTick(n => n + 1); })
             .catch(() => {});
         });
-      }, [hasApiFilters]);
+      }, [hasApiFilters, filterPanelNeedsApi]);
 
       const isLoadingApiFilters = hasApiFilters && ROSTER.some(p => !pokemonCache[p.slug]);
+
+      const filterSuggestions = useMemo(() => {
+        if (!filterPanelNeedsApi) return [];
+        const query = valueInput.trim().toLowerCase().replace(/ /g, '-');
+        if (!query) return [];
+        const seen = new Set();
+        const results = [];
+        Object.values(pokemonCache).forEach(d => {
+          const names = filterMenu.kind === 'move'
+            ? d.moves.map(m => m.move.name)
+            : d.abilities.map(a => a.ability.name);
+          names.forEach(name => {
+            if (!seen.has(name) && name.includes(query)) { seen.add(name); results.push(name); }
+          });
+        });
+        return results.sort().slice(0, 8);
+      }, [filterPanelNeedsApi, filterMenu, valueInput, fetchTick]);
+
 
       const filtered = useMemo(() => {
         return ROSTER.filter(p => {
@@ -999,11 +1018,15 @@
             <div style={{display:'flex', alignItems:'center', gap:8}}>
               <input
                 type="text"
+                list="roster-pokemon-list"
                 placeholder={t('roster.search')}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="w-full px-4 py-2 bg-gray-900 text-white rounded border border-gray-700 focus:outline-none focus:border-indigo-500 text-sm"
               />
+              <datalist id="roster-pokemon-list">
+                {ROSTER.map(p => <option key={p.slug} value={p.name} />)}
+              </datalist>
               {/* Filter button + dropdown */}
               <div style={{position:'relative', flexShrink:0}}>
                 <button
@@ -1068,16 +1091,33 @@
                         ))}
                       </div>
                     ) : (
-                      <div style={{padding:'4px 10px 10px', display:'flex', flexDirection:'column', gap:6, minWidth:200}}>
+                      <div style={{padding:'4px 10px 10px', display:'flex', flexDirection:'column', gap:6, minWidth:220}}>
                         <input
                           autoFocus
                           type="text"
                           value={valueInput}
                           onChange={e => setValueInput(e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter') commitFilter(valueInput.toLowerCase().replace(/ /g, '-')); }}
-                          placeholder={currentKindMeta.id === 'move' ? 'e.g. earthquake' : 'e.g. levitate'}
+                          placeholder={currentKindMeta.id === 'move' ? 'e.g. Fake Out' : 'e.g. Levitate'}
                           className="px-3 py-1.5 bg-gray-900 text-white rounded border border-gray-700 focus:outline-none focus:border-indigo-500 text-sm"
                         />
+                        {filterSuggestions.length > 0 && (
+                          <div style={{background:'#0d0d1a', border:'1px solid rgba(99,102,241,0.3)', borderRadius:6, overflow:'hidden', maxHeight:160, overflowY:'auto'}}>
+                            {filterSuggestions.map(s => (
+                              <button key={s}
+                                onMouseDown={e => { e.preventDefault(); commitFilter(s); }}
+                                style={{display:'block', width:'100%', textAlign:'left', padding:'5px 10px', background:'none', border:'none', color:'#c7d2fe', fontSize:'0.8rem', cursor:'pointer', lineHeight:1.4}}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(99,102,241,0.2)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                              >{s.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</button>
+                            ))}
+                          </div>
+                        )}
+                        {filterPanelNeedsApi && ROSTER.some(p => !pokemonCache[p.slug]) && (
+                          <div style={{fontSize:'0.68rem', color:'#64748b'}}>
+                            Loading suggestions… {Object.keys(pokemonCache).length}/{ROSTER.length}
+                          </div>
+                        )}
                         <button
                           onClick={() => commitFilter(valueInput.toLowerCase().replace(/ /g, '-'))}
                           className="btn-primary"
