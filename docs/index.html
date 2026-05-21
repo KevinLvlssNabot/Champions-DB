@@ -635,6 +635,7 @@
 
     // ─── i18n ──────────────────────────────────────────────────────────────────
     const LangContext = createContext('en');
+    const FrTickContext = createContext(0); // increments when French names finish loading
     function useT() {
       const lang = useContext(LangContext);
       return (key) => (T[lang] && T[lang][key]) || (T['en'] && T['en'][key]) || key;
@@ -930,6 +931,8 @@
 
     function RosterTab({ team, onAddToTeam, onHoverPokemon, tooltipData }) {
       const t = useT();
+      const lang = useContext(LangContext);
+      const frTick = useContext(FrTickContext);
       const [search, setSearch] = useState("");
       const [activeFilters, setActiveFilters] = useState([]);
       const [fetchTick, setFetchTick] = useState(0);
@@ -972,7 +975,13 @@
 
       const filtered = useMemo(() => {
         return ROSTER.filter(p => {
-          if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
+          if (search) {
+            const q = search.toLowerCase();
+            const enMatch = p.name.toLowerCase().includes(q);
+            const frName = speciesCache[p.id];
+            const frMatch = frName && frName.toLowerCase().includes(q);
+            if (!enMatch && !frMatch) return false;
+          }
           for (const f of activeFilters) {
             if (f.kind === 'type')    { if (!p.types.includes(f.value)) return false; }
             if (f.kind === 'resists') { if (getDefensiveMult(p.types, f.value) > 0.5) return false; }
@@ -989,7 +998,7 @@
           }
           return true;
         });
-      }, [search, activeFilters, fetchTick]);
+      }, [search, activeFilters, fetchTick, frTick]);
 
       function commitFilter(value) {
         if (!value) { setFilterMenu(null); return; }
@@ -1026,7 +1035,7 @@
                 className="w-full px-4 py-2 bg-gray-900 text-white rounded border border-gray-700 focus:outline-none focus:border-indigo-500 text-sm"
               />
               <datalist id="roster-pokemon-list">
-                {ROSTER.map(p => <option key={p.slug} value={p.name} />)}
+                {ROSTER.map(p => { const frName = lang === 'fr' ? speciesCache[p.id] : null; return <option key={p.slug} value={frName || p.name} />; })}
               </datalist>
               {/* Filter button + dropdown */}
               <div style={{position:'relative', flexShrink:0}}>
@@ -1213,6 +1222,7 @@
     function TeamSlot({ mon, idx, onRemove, onSelect, item, onSetItem, moves, onSetMoves, ability, onSetAbility }) {
       const t = useT();
       const lang = useContext(LangContext);
+      const frTick = useContext(FrTickContext);
       const { data: apiData } = usePokemon(mon ? mon.slug : null);
       const [pokeSearch, setPokeSearch] = useState('');
       const [moveTypes, setMoveTypes] = useState([null,null,null,null]);
@@ -1222,8 +1232,13 @@
       const abilities = useMemo(() => apiData ? apiData.abilities.map(a => ({ name: a.ability.name, hidden: a.is_hidden })) : [], [apiData]);
       const filteredRoster = useMemo(() => {
         if (!pokeSearch.trim()) return [];
-        return ROSTER.filter(p => p.name.toLowerCase().includes(pokeSearch.toLowerCase())).slice(0, 12);
-      }, [pokeSearch]);
+        const q = pokeSearch.toLowerCase();
+        return ROSTER.filter(p => {
+          if (p.name.toLowerCase().includes(q)) return true;
+          const frName = speciesCache[p.id];
+          return frName && frName.toLowerCase().includes(q);
+        }).slice(0, 12);
+      }, [pokeSearch, frTick]);
 
       useEffect(() => {
         moves.forEach((moveName, i) => {
@@ -1303,7 +1318,7 @@
               <div style={{color:'#374151',fontSize:'0.7rem'}} className="mb-2">{t('tb.empty')}</div>
               <input type="text" placeholder={t('tb.searchPoke')} value={pokeSearch} onChange={e=>setPokeSearch(e.target.value)} className="w-full px-2 py-1 bg-gray-900 text-white text-xs rounded border border-gray-700 mb-1 focus:outline-none focus:border-indigo-500"/>
               {filteredRoster.length>0&&<div className="poke-picker mb-1">
-                {filteredRoster.map(p=><div key={p.slug} className="px-2 py-1 text-xs cursor-pointer hover:bg-indigo-800 text-left" style={{color:'#cbd5e1'}} onClick={()=>{onSelect(p);setPokeSearch('');}}>{p.name}</div>)}
+                {filteredRoster.map(p=>{const frName=lang==='fr'?speciesCache[p.id]:null;return<div key={p.slug} className="px-2 py-1 text-xs cursor-pointer hover:bg-indigo-800 text-left" style={{color:'#cbd5e1'}} onClick={()=>{onSelect(p);setPokeSearch('');}}>{frName||p.name}</div>;})}
               </div>}
             </div>
           )}
@@ -2136,7 +2151,24 @@
       const [abilitySelectors, setAbilitySelectors] = useState(Array(6).fill(''));
       const [tooltipData, setTooltipData] = useState(null);
       const [lang, setLang] = useState('en');
+      const [frTick, setFrTick] = useState(0);
       const t = (key) => (T[lang] && T[lang][key]) || (T['en'] && T['en'][key]) || key;
+
+      // Bulk-fetch French Pokémon names when switching to French so search works immediately
+      useEffect(() => {
+        if (lang !== 'fr') return;
+        const toFetch = ROSTER.filter(p => speciesCache[p.id] === undefined);
+        if (!toFetch.length) { setFrTick(t => t + 1); return; }
+        let done = 0;
+        toFetch.forEach(p => {
+          speciesCache[p.id] = null; // mark in-flight
+          fetch(`https://pokeapi.co/api/v2/pokemon-species/${p.id}`)
+            .then(r => r.json())
+            .then(d => { speciesCache[p.id] = d.names.find(n => n.language.name === 'fr')?.name || p.name; })
+            .catch(() => { speciesCache[p.id] = p.name; })
+            .finally(() => { done++; if (done % 25 === 0 || done === toFetch.length) setFrTick(t => t + 1); });
+        });
+      }, [lang]);
 
       const handleHoverPokemon = useCallback((pokemon, event) => {
         if (pokemon && event) {
@@ -2171,6 +2203,7 @@
       ];
 
       return (
+        <FrTickContext.Provider value={frTick}>
         <LangContext.Provider value={lang}>
         <div className="min-h-screen" style={{backgroundColor:'#0a0a0a'}}>
           <header style={{backgroundColor:'#111111',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
@@ -2224,6 +2257,7 @@
           </main>
         </div>
         </LangContext.Provider>
+        </FrTickContext.Provider>
       );
     }
 
