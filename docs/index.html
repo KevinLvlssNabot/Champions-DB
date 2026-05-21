@@ -755,7 +755,13 @@
           .catch(() => { speciesCache[pokemon.id] = pokemon.name; setNameFr(pokemon.name); });
       }, [pokemon.id, lang]);
       if (lang !== 'fr') return <>{pokemon.name}</>;
-      return <>{nameFr || pokemon.name}</>;
+      const base = nameFr || pokemon.name;
+      const formMatch = pokemon.name.match(/\(([^)]+)\)$/);
+      if (formMatch && formMatch[1].includes('Mega')) {
+        const formFr = formMatch[1].replace(/\bMega\b/g, 'Méga');
+        return <>{base} ({formFr})</>;
+      }
+      return <>{base}</>;
     }
 
     // ─── Item name with lazy FR lookup ───────────────────────────────────────
@@ -794,13 +800,22 @@
       'fluffy': { fire: 2 },
     };
 
+    const TYPE_FR = {
+      normal:'Normal', fire:'Feu', water:'Eau', electric:'Électrique', grass:'Plante',
+      ice:'Glace', fighting:'Combat', poison:'Poison', ground:'Sol', flying:'Vol',
+      psychic:'Psy', bug:'Insecte', rock:'Roche', ghost:'Spectre', dragon:'Dragon',
+      dark:'Ténèbres', steel:'Acier', fairy:'Fée',
+    };
+
     function getSpriteUrl(pokemon) {
       const slug = pokemon.sdSlug || pokemon.slug;
       return `https://play.pokemonshowdown.com/sprites/ani/${slug}.gif`;
     }
 
     function TypeBadge({ type }) {
-      return <span className={`type-badge type-${type.toLowerCase()}`}>{type}</span>;
+      const lang = useContext(LangContext);
+      const label = lang === 'fr' ? (TYPE_FR[type.toLowerCase()] || type) : type;
+      return <span className={`type-badge type-${type.toLowerCase()}`}>{label}</span>;
     }
 
     function getDefensiveMult(pokeTypes, attackType) {
@@ -1268,6 +1283,22 @@
         });
       }, [abilities, lang]);
 
+      useEffect(() => {
+        if (lang !== 'fr' || !apiData) return;
+        const lvMoves = [...new Set(
+          apiData.moves
+            .filter(m => m.version_group_details.some(v => v.move_learn_method.name === 'level-up'))
+            .map(m => m.move.name)
+        )];
+        lvMoves.forEach(moveName => {
+          if (moveTypeCache[moveName]) return;
+          fetch(`https://pokeapi.co/api/v2/move/${moveName}`)
+            .then(r => r.json())
+            .then(d => { moveTypeCache[moveName]=d.type.name; moveFrNameCache[moveName]=d.names.find(n=>n.language.name==='fr')?.name||null; setTick(t=>t+1); })
+            .catch(() => {});
+        });
+      }, [apiData, lang]);
+
       return (
         <div className="card p-2 rounded text-center" style={{minWidth:0}}>
           <div className="text-xs font-semibold mb-1" style={{color:'#64748b'}}>{t('tb.slot')} {idx+1}</div>
@@ -1295,7 +1326,7 @@
               )}
               <select value={item||""} onChange={e=>onSetItem(e.target.value)} className="w-full px-1 py-1 bg-gray-900 text-white text-xs rounded border border-gray-700 mb-2">
                 <option value="">{t('tb.noItem')}</option>
-                {sortedItems.map(it=><option key={it.name} value={it.name}>{it.name}</option>)}
+                {sortedItems.map(it=>{ const iDisp=lang==='fr'?(itemFrNameCache[it.itemSprite]||it.name):it.name; return <option key={it.name} value={it.name}>{iDisp}</option>; })}
               </select>
               <div className="space-y-1 mb-2">
                 {[0,1,2,3].map(mi=>(
@@ -1586,15 +1617,20 @@
 
     function ItemsTab() {
       const t = useT();
+      const lang = useContext(LangContext);
+      const frTick = useContext(FrTickContext);
       const [search, setSearch] = useState("");
       const [cat, setCat] = useState("All");
       const categories = ["All","Berry","Choice","Damage","Recovery","Survival","Utility","Mega Stone"];
 
       const filtered = useMemo(() => ITEMS.filter(item => {
-        const ms = item.name.toLowerCase().includes(search.toLowerCase());
+        const q = search.toLowerCase();
+        const enMatch = item.name.toLowerCase().includes(q);
+        const frMatch = lang === 'fr' && itemFrNameCache[item.itemSprite]?.toLowerCase().includes(q);
+        const ms = !q || enMatch || frMatch;
         const mc = cat === "All" || item.category === cat;
         return ms && mc;
-      }), [search, cat]);
+      }), [search, cat, frTick, lang]);
 
       return (
         <div className="space-y-4">
@@ -2154,19 +2190,30 @@
       const [frTick, setFrTick] = useState(0);
       const t = (key) => (T[lang] && T[lang][key]) || (T['en'] && T['en'][key]) || key;
 
-      // Bulk-fetch French Pokémon names when switching to French so search works immediately
+      // Bulk-fetch French Pokémon + item names when switching to French
       useEffect(() => {
         if (lang !== 'fr') return;
-        const toFetch = ROSTER.filter(p => speciesCache[p.id] === undefined);
-        if (!toFetch.length) { setFrTick(t => t + 1); return; }
-        let done = 0;
-        toFetch.forEach(p => {
-          speciesCache[p.id] = null; // mark in-flight
+        // Pokémon species names
+        const pokesToFetch = ROSTER.filter(p => speciesCache[p.id] === undefined);
+        let pokeDone = 0;
+        const pokeTotal = pokesToFetch.length;
+        pokesToFetch.forEach(p => {
+          speciesCache[p.id] = null;
           fetch(`https://pokeapi.co/api/v2/pokemon-species/${p.id}`)
             .then(r => r.json())
             .then(d => { speciesCache[p.id] = d.names.find(n => n.language.name === 'fr')?.name || p.name; })
             .catch(() => { speciesCache[p.id] = p.name; })
-            .finally(() => { done++; if (done % 25 === 0 || done === toFetch.length) setFrTick(t => t + 1); });
+            .finally(() => { pokeDone++; if (pokeDone % 25 === 0 || pokeDone === pokeTotal) setFrTick(t => t + 1); });
+        });
+        if (!pokeTotal) setFrTick(t => t + 1);
+        // Item names
+        ITEMS.filter(it => it.itemSprite && it.itemSprite !== 'null' && !(it.itemSprite in itemFrNameCache)).forEach(it => {
+          itemFrNameCache[it.itemSprite] = null;
+          fetch(`https://pokeapi.co/api/v2/item/${it.itemSprite}`)
+            .then(r => r.json())
+            .then(d => { itemFrNameCache[it.itemSprite] = d.names.find(n => n.language.name === 'fr')?.name || it.name; })
+            .catch(() => { itemFrNameCache[it.itemSprite] = it.name; })
+            .finally(() => setFrTick(t => t + 1));
         });
       }, [lang]);
 
